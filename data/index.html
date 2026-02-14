@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP32 HAM CLOCK</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #4CAF50;
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #333;
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            background: #2a2a2a;
+            border: none;
+            color: #fff;
+            margin-right: 5px;
+        }
+        .tab.active {
+            background: #4CAF50;
+        }
+        .tab-content {
+            display: none;
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 5px;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #4CAF50;
+        }
+        input[type="text"],
+        input[type="password"],
+        input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            background: #1a1a1a;
+            border: 1px solid #444;
+            color: #fff;
+            border-radius: 3px;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .status {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 5px;
+        }
+        .status-item .label {
+            color: #4CAF50;
+        }
+        .connected {
+            color: #4CAF50;
+        }
+        .disconnected {
+            color: #f44336;
+        }
+        .display-canvas {
+            width: 100%;
+            max-width: 480px;
+            height: 640px;
+            background: #000;
+            border: 2px solid #333;
+            margin: 0 auto;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>ESP32 HAM CLOCK</h1>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('status')">Status</button>
+            <button class="tab" onclick="showTab('display')">Display</button>
+            <button class="tab" onclick="showTab('config')">Config</button>
+        </div>
+        
+        <div id="status" class="tab-content active">
+            <div class="status">
+                <div class="status-item">
+                    <span class="label">Uptime:</span>
+                    <span id="uptime">-</span>
+                </div>
+                <div class="status-item">
+                    <span class="label">WiFi:</span>
+                    <span id="wifi-status">-</span>
+                </div>
+                <div class="status-item">
+                    <span class="label">IP Address:</span>
+                    <span id="ip-address">-</span>
+                </div>
+                <div class="status-item">
+                    <span class="label">RSSI:</span>
+                    <span id="rssi">-</span>
+                </div>
+                <div class="status-item">
+                    <span class="label">DX Cluster:</span>
+                    <span id="dx-status">-</span>
+                </div>
+                <div class="status-item">
+                    <span class="label">APRS-IS:</span>
+                    <span id="aprs-status">-</span>
+                </div>
+                <div class="status-item">
+                    <span class="label">Current Screen:</span>
+                    <span id="current-screen">-</span>
+                </div>
+            </div>
+        </div>
+        
+        <div id="display" class="tab-content">
+            <canvas id="display-canvas" class="display-canvas" width="240" height="320"></canvas>
+            <p style="text-align: center; margin-top: 10px; color: #888;">
+                TFT Display Emulation (Coming Soon)
+            </p>
+        </div>
+        
+        <div id="config" class="tab-content">
+            <form id="config-form">
+                <h3>WiFi Settings</h3>
+                <div class="form-group">
+                    <label>WiFi SSID (Primary):</label>
+                    <input type="text" id="wifi_ssid" name="wifi_ssid">
+                </div>
+                <div class="form-group">
+                    <label>WiFi Password (Primary):</label>
+                    <input type="password" id="wifi_password" name="wifi_password">
+                </div>
+                <div class="form-group">
+                    <label>WiFi SSID (Secondary):</label>
+                    <input type="text" id="wifi_ssid2" name="wifi_ssid2">
+                </div>
+                <div class="form-group">
+                    <label>WiFi Password (Secondary):</label>
+                    <input type="password" id="wifi_password2" name="wifi_password2">
+                </div>
+                
+                <h3>DX Cluster</h3>
+                <div class="form-group">
+                    <label>DX Cluster Host:</label>
+                    <input type="text" id="dx_host" name="dx_host" placeholder="dxc.wl7d.net">
+                </div>
+                <div class="form-group">
+                    <label>DX Cluster Port:</label>
+                    <input type="number" id="dx_port" name="dx_port" value="7300">
+                </div>
+                
+                <h3>Station Info</h3>
+                <div class="form-group">
+                    <label>Callsign:</label>
+                    <input type="text" id="callsign" name="callsign" placeholder="SP3KON">
+                </div>
+                <div class="form-group">
+                    <label>Locator:</label>
+                    <input type="text" id="locator" name="locator" placeholder="KO02">
+                </div>
+                
+                <h3>API Keys</h3>
+                <div class="form-group">
+                    <label>OpenWeather API Key:</label>
+                    <input type="text" id="ow_key" name="ow_key">
+                </div>
+                <div class="form-group">
+                    <label>QRZ.com API Key (optional):</label>
+                    <input type="text" id="qrz_key" name="qrz_key">
+                </div>
+                
+                <h3>Display Settings</h3>
+                <div class="form-group">
+                    <label>Brightness (0-255):</label>
+                    <input type="number" id="brightness" name="brightness" min="0" max="255" value="128">
+                </div>
+                <div class="form-group">
+                    <label>Language:</label>
+                    <input type="text" id="language" name="language" value="EN" placeholder="EN or PL">
+                </div>
+                <div class="form-group">
+                    <label>Rotation (0-3):</label>
+                    <input type="number" id="rotation" name="rotation" min="0" max="3" value="1">
+                </div>
+                
+                <button type="submit">Save Configuration & Restart</button>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        // Tab switching
+        function showTab(tabName) {
+            const tabs = document.querySelectorAll('.tab');
+            const contents = document.querySelectorAll('.tab-content');
+            
+            tabs.forEach(tab => tab.classList.remove('active'));
+            contents.forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+            
+            if (tabName === 'status') {
+                updateStatus();
+            } else if (tabName === 'config') {
+                loadConfig();
+            }
+        }
+        
+        // Update status
+        function updateStatus() {
+            fetch('/api/status')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('uptime').textContent = formatUptime(data.uptime);
+                    
+                    const wifiStatus = document.getElementById('wifi-status');
+                    if (data.wifi_connected) {
+                        wifiStatus.textContent = 'Connected';
+                        wifiStatus.className = 'connected';
+                    } else {
+                        wifiStatus.textContent = 'Disconnected';
+                        wifiStatus.className = 'disconnected';
+                    }
+                    
+                    document.getElementById('ip-address').textContent = data.ip || 'N/A';
+                    document.getElementById('rssi').textContent = data.wifi_rssi ? data.wifi_rssi + ' dBm' : 'N/A';
+                    
+                    const dxStatus = document.getElementById('dx-status');
+                    if (data.dx_connected) {
+                        dxStatus.textContent = 'Connected';
+                        dxStatus.className = 'connected';
+                    } else {
+                        dxStatus.textContent = 'Disconnected';
+                        dxStatus.className = 'disconnected';
+                    }
+                    
+                    const aprsStatus = document.getElementById('aprs-status');
+                    if (data.aprs_connected) {
+                        aprsStatus.textContent = 'Connected';
+                        aprsStatus.className = 'connected';
+                    } else {
+                        aprsStatus.textContent = 'Disconnected';
+                        aprsStatus.className = 'disconnected';
+                    }
+                    
+                    const screens = ['Clock', 'DX', 'APRS', 'Bands', 'Propagation', 'Weather', 'POTA', 'Matrix'];
+                    document.getElementById('current-screen').textContent = screens[data.screen] || 'Unknown';
+                })
+                .catch(error => console.error('Error fetching status:', error));
+        }
+        
+        function formatUptime(seconds) {
+            const days = Math.floor(seconds / 86400);
+            const hours = Math.floor((seconds % 86400) / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            const secs = seconds % 60;
+            
+            if (days > 0) {
+                return `${days}d ${hours}h ${minutes}m`;
+            } else if (hours > 0) {
+                return `${hours}h ${minutes}m ${secs}s`;
+            } else {
+                return `${minutes}m ${secs}s`;
+            }
+        }
+        
+        // Load configuration
+        function loadConfig() {
+            fetch('/api/config')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('wifi_ssid').value = data.wifi_ssid || '';
+                    document.getElementById('wifi_ssid2').value = data.wifi_ssid2 || '';
+                    document.getElementById('dx_host').value = data.dx_host || '';
+                    document.getElementById('dx_port').value = data.dx_port || 7300;
+                    document.getElementById('callsign').value = data.callsign || '';
+                    document.getElementById('locator').value = data.locator || '';
+                    document.getElementById('brightness').value = data.brightness || 128;
+                    document.getElementById('language').value = data.language || 'EN';
+                    document.getElementById('rotation').value = data.rotation || 1;
+                })
+                .catch(error => console.error('Error loading config:', error));
+        }
+        
+        // Save configuration
+        document.getElementById('config-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const config = {};
+            
+            for (let [key, value] of formData.entries()) {
+                if (key === 'dx_port' || key === 'brightness' || key === 'rotation') {
+                    config[key] = parseInt(value);
+                } else {
+                    config[key] = value;
+                }
+            }
+            
+            fetch('/api/config', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(config)
+            })
+            .then(response => response.text())
+            .then(data => {
+                alert('Configuration saved! Device will restart...');
+            })
+            .catch(error => {
+                console.error('Error saving config:', error);
+                alert('Error saving configuration');
+            });
+        });
+        
+        // Auto-refresh status every 5 seconds
+        setInterval(() => {
+            if (document.getElementById('status').classList.contains('active')) {
+                updateStatus();
+            }
+        }, 5000);
+        
+        // Initial status load
+        updateStatus();
+    </script>
+</body>
+</html>
