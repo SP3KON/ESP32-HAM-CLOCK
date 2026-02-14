@@ -1,4 +1,8 @@
 # ESP32-HAM-CLOCK
+
+> **📁 Struktura projektu PlatformIO jest już dodana!**  
+> Zobacz: [PLATFORMIO_DODANO.md](PLATFORMIO_DODANO.md) (PL) lub [PLATFORMIO_SETUP.md](PLATFORMIO_SETUP.md) (EN)
+
 ESP32 HAM CLOCK to zegar i terminal DX Cluster dla modułu ESP32-2432S028 (CYD) z dotykowym TFT 2.4". Aplikacja łączy się z DX Cluster (telnet), POTA (API), APRS-IS i pobiera pogodę oraz dane propagacyjne. Ma wbudowany interfejs WWW (emulacja TFT), portal konfiguracyjny w trybie AP, obsługę dotyku (menu filtrów, jasność, kalibracja) i zapis ustawień w NVS. Ekrany obejmują zegar (UTC/local), DX, POTA, APRS, pasma HF, propagację, pogodę i matrix clock. Obsługa LittleFS (fonty/HTML), auto-kopiowanie User_Setup.h do TFT_eSPI, oraz cykliczne odświeżanie danych (pogoda, propagacja, POTA, QRZ).
 
 
