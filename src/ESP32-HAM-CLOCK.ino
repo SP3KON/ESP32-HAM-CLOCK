@@ -377,9 +377,14 @@ uint8_t screen1TimeMode = SCREEN1_TIME_UTC;
 
 enum TftLang : uint8_t {
   TFT_LANG_PL = 0,
-  TFT_LANG_EN = 1
+  TFT_LANG_EN = 1,
+  TFT_LANG_PT = 2  // Portuguese (Brazil)
 };
 uint8_t tftLanguage = TFT_LANG_PL;
+
+// Pick a literal/String by the current language: LANG3(polish, english, portuguese)
+#define LANG3(pl, en, pt) \
+  ((tftLanguage == TFT_LANG_EN) ? (en) : ((tftLanguage == TFT_LANG_PT) ? (pt) : (pl)))
 
 enum TftStyleMode : uint8_t {
   TFT_STYLE_DARK = 0,
@@ -405,7 +410,8 @@ TftUiPalette tftUiPalette = {
 
 enum DxTableSizeMode : uint8_t {
   DX_TABLE_SIZE_NORMAL = 0,
-  DX_TABLE_SIZE_ENLARGED = 1
+  DX_TABLE_SIZE_ENLARGED = 1,
+  DX_TABLE_SIZE_MEDIUM = 2   // normal layout drawn with the 16 px built-in Font 2
 };
 uint8_t dxTableSizeMode = DX_TABLE_SIZE_NORMAL;
 
@@ -508,6 +514,35 @@ static const char* TR_PL[TR_KEY_COUNT] = {
   "JEZYK"
 };
 
+static const char* TR_PT[TR_KEY_COUNT] = {
+  "Hora",
+  "Ind.",
+  "PAIS",
+  "Aguardando spots...",
+  "CLIMA",
+  "TEMPERATURA",
+  "UMIDADE",
+  "PRESS\xC3\x83O",
+  "VENTO",
+  "Previs\xC3\xA3o para 3 horas:",
+  "Previs\xC3\xA3o para amanh\xC3\xA3:",
+  "Sem dados",
+  "ERRO: ",
+  "Pagina",
+  "Segure 5 seg = Calibrar",
+  "Calibrar TFT",
+  "Girar 90 deg p/ direita (rot90cw)",
+  "Girar 90 deg p/ esquerda (rot90ccw)",
+  "AJUSTES DA TELA",
+  "BRILHO:",
+  "COR DO TEMA:",
+  "Segure 3 seg = Calibrar",
+  "SALVAR",
+  "PADRAO",
+  "FECHAR",
+  "IDIOMA"
+};
+
 static const char* TR_EN[TR_KEY_COUNT] = {
   "Time",
   "Call",
@@ -542,10 +577,11 @@ static const char* tr(TrKey key) {
   if (idx >= TR_KEY_COUNT) {
     return "";
   }
-  return (tftLanguage == TFT_LANG_EN) ? TR_EN[idx] : TR_PL[idx];
+  return LANG3(TR_PL[idx], TR_EN[idx], TR_PT[idx]);
 }
 
 static const char* tftLangToCode(uint8_t lang) {
+  if (lang == TFT_LANG_PT) return "pt";
   return (lang == TFT_LANG_EN) ? "en" : "pl";
 }
 
@@ -554,6 +590,9 @@ static uint8_t tftLangFromCode(const String &code) {
   up.toLowerCase();
   if (up == "en") {
     return TFT_LANG_EN;
+  }
+  if (up == "pt" || up == "pt-br" || up == "pt_br") {
+    return TFT_LANG_PT;
   }
   return TFT_LANG_PL;
 }
@@ -572,6 +611,7 @@ static uint8_t tftStyleFromCode(const String &code) {
 }
 
 static const char* dxTableSizeToCode(uint8_t mode) {
+  if (mode == DX_TABLE_SIZE_MEDIUM) return "medium";
   return (mode == DX_TABLE_SIZE_ENLARGED) ? "enlarged" : "normal";
 }
 
@@ -581,6 +621,9 @@ static uint8_t dxTableSizeFromCode(const String &code) {
   if (up == "enlarged" || up == "large" || up == "big") {
     return DX_TABLE_SIZE_ENLARGED;
   }
+  if (up == "medium" || up == "mid") {
+    return DX_TABLE_SIZE_MEDIUM;
+  }
   return DX_TABLE_SIZE_NORMAL;
 }
 
@@ -588,7 +631,19 @@ static bool isDxTableEnlarged() {
   return dxTableSizeMode == DX_TABLE_SIZE_ENLARGED;
 }
 
+static bool isDxTableMedium() {
+  return dxTableSizeMode == DX_TABLE_SIZE_MEDIUM;
+}
+
+// Max rows for the MEDIUM table size (Font 2, 20 px row pitch)
+static int getMediumTableMaxRows(ScreenType screenNum) {
+  return isTableNavFooterVisible(screenNum) ? 8 : 9;
+}
+
 static int getDxTableMaxRows() {
+  if (isDxTableMedium()) {
+    return getMediumTableMaxRows(SCREEN_DX_CLUSTER);
+  }
   if (!isDxTableEnlarged()) {
     return getTableMaxRowsForScreen(SCREEN_DX_CLUSTER);
   }
@@ -596,6 +651,9 @@ static int getDxTableMaxRows() {
 }
 
 static int getPotaTableMaxRows() {
+  if (isDxTableMedium()) {
+    return getMediumTableMaxRows(SCREEN_POTA_CLUSTER);
+  }
   if (!isDxTableEnlarged()) {
     return getTableMaxRowsForScreen(SCREEN_POTA_CLUSTER);
   }
@@ -603,6 +661,9 @@ static int getPotaTableMaxRows() {
 }
 
 static int getHamalertTableMaxRows() {
+  if (isDxTableMedium()) {
+    return getMediumTableMaxRows(SCREEN_HAMALERT_CLUSTER);
+  }
   if (!isDxTableEnlarged()) {
     return getTableMaxRowsForScreen(SCREEN_HAMALERT_CLUSTER);
   }
@@ -610,6 +671,9 @@ static int getHamalertTableMaxRows() {
 }
 
 static int getAprsTableMaxRows() {
+  if (isDxTableMedium()) {
+    return getMediumTableMaxRows(SCREEN_APRS_IS);
+  }
   if (!isDxTableEnlarged()) {
     return getTableMaxRowsForScreen(SCREEN_APRS_IS);
   }
@@ -3721,8 +3785,7 @@ static bool isLokalizacjaSaveButtonHit(uint16_t x, uint16_t y) {
 }
 
 static void drawLokalizacjaSaveButton() {
-  bool isEn = (tftLanguage == TFT_LANG_EN);
-  const char *btnLabel = isEn ? "SAVE" : "ZAPISZ";
+  const char *btnLabel = LANG3("ZAPISZ", "SAVE", "SALVAR");
   uint16_t btnFill = TFT_WHITE;
   uint16_t btnBorder = TFT_BLACK;
   uint16_t btnText = TFT_BLACK;
@@ -3787,12 +3850,13 @@ static void updateLokalizacjaFields() {
   unsigned long nowMs = millis();
   bool gpsActive = isGpsUartActive(nowMs);
   bool gpsFix = isGpsFixActive(nowMs);
-  bool isEn = (tftLanguage == TFT_LANG_EN);
   bool lightTheme = isTftStyleLight();
   uint16_t bgColor = lightTheme ? TFT_WHITE : TFT_BLACK;
 
-  String gpsText = gpsActive ? (isEn ? "ACTIVE" : "aktywny") : (isEn ? "INACTIVE" : "nieaktywny");
-  String fixText = gpsFix ? (isEn ? "YES" : "TAK") : (isEn ? "NO" : "NIE");
+  String gpsText = gpsActive ? String(LANG3("aktywny", "ACTIVE", "ativo"))
+                             : String(LANG3("nieaktywny", "INACTIVE", "inativo"));
+  String fixText = gpsFix ? String(LANG3("TAK", "YES", "SIM"))
+                          : String(LANG3("NIE", "NO", "NAO"));
   String satsInView = (gpsSatellitesInView >= 0) ? String(gpsSatellitesInView) : String("--");
   String latText = gpsLocationValid ? String(gpsLatitude, 6) : String("--");
   String lonText = gpsLocationValid ? String(gpsLongitude, 6) : String("--");
@@ -3828,7 +3892,6 @@ static void updateLokalizacjaFields() {
 
 void drawLokalizacja() {
 
-  bool isEn = (tftLanguage == TFT_LANG_EN);
   bool lightTheme = isTftStyleLight();
   uint16_t pageBgColor = lightTheme ? TFT_WHITE : TFT_BLACK;
   uint16_t labelColor = lightTheme ? TFT_BLACK : TFT_WHITE;
@@ -3840,7 +3903,7 @@ void drawLokalizacja() {
   tft.fillRect(0, 0, 320, 40, menuThemeColor);
   tft.drawFastHLine(0, 39, 320, 0x8410);
 
-  const String headerText = isEn ? "LOCATION" : "LOKALIZACJA";
+  const String headerText = LANG3("LOKALIZACJA", "LOCATION", "LOCALIZACAO");
   int headerX = (320 - ((int)headerText.length() * 12)) / 2;
   if (headerX < 6) {
     headerX = 6;
@@ -3869,7 +3932,7 @@ void drawLokalizacja() {
   const int rowH = 26;
   tft.setTextColor(labelColor);
   tft.setCursor(20, y);
-  tft.print(isEn ? "SATS:" : "Satelity:");
+  tft.print(LANG3("Satelity:", "SATS:", "Satelites:"));
 
   y += rowH;
   tft.setTextColor(labelColor);
@@ -3884,12 +3947,12 @@ void drawLokalizacja() {
   y += rowH;
   tft.setTextColor(labelColor);
   tft.setCursor(20, y);
-  tft.print(isEn ? "SPEED:" : "Predkosc:");
+  tft.print(LANG3("Predkosc:", "SPEED:", "Velocidade:"));
 
   y += rowH;
   tft.setTextColor(labelColor);
   tft.setCursor(20, y);
-  tft.print(isEn ? "LOCATOR:" : "Lokator:");
+  tft.print(LANG3("Lokator:", "LOCATOR:", "Locator:"));
 
   updateLokalizacjaFields();
   drawSwitchScreenFooter();
@@ -4117,6 +4180,15 @@ String sanitizePolishToAscii(const String &input) {
     if (c == 0xC5 && c2 == 0xBA) { out += 'z'; i++; continue; } // ź
     if (c == 0xC5 && c2 == 0xBB) { out += 'z'; i++; continue; } // Ż
     if (c == 0xC5 && c2 == 0xBC) { out += 'z'; i++; continue; } // ż
+    // Latin-1 accented letters (Portuguese etc.) -> base ASCII letter
+    if (c == 0xC3 && c2 >= 0x80 && c2 <= 0xBF) {
+      static const char latin1Base[] =
+          "AAAAAAACEEEEIIIIDNOOOOO*OUUUUYTs"
+          "aaaaaaaceeeeiiiidnooooo/ouuuuyty";
+      out += latin1Base[c2 - 0x80];
+      i++;
+      continue;
+    }
     // Unknown multibyte - skip
   }
   return out;
@@ -4233,6 +4305,46 @@ String getEnglishDateStringFullWithTimezone() {
                    "." + String(1900 + timeinfo.tm_year);
 
   String full = String(weekdaysFullEn[timeinfo.tm_wday]) + " " + dateBuf;
+  return full;
+}
+
+String getPortugueseDateStringFull() {
+  struct tm timeinfo;
+  if (!getLocalTime(&timeinfo, 1)) {
+    return "Sem data";
+  }
+
+  static const char* weekdaysFullPt[] = {
+    "Domingo", "Segunda-feira", "Ter\xC3\xA7" "a-feira", "Quarta-feira",
+    "Quinta-feira", "Sexta-feira", "S\xC3\xA1" "bado"
+  };
+
+  String dateBuf = String(timeinfo.tm_mday < 10 ? "0" : "") + String(timeinfo.tm_mday) +
+                   "." +
+                   String((timeinfo.tm_mon + 1) < 10 ? "0" : "") + String(timeinfo.tm_mon + 1) +
+                   "." + String(1900 + timeinfo.tm_year);
+
+  String full = String(weekdaysFullPt[timeinfo.tm_wday]) + " " + dateBuf;
+  return full;
+}
+
+String getPortugueseDateStringFullWithTimezone() {
+  struct tm timeinfo;
+  if (!getTimeWithTimezone(&timeinfo)) {
+    return "Sem data";
+  }
+
+  static const char* weekdaysFullPt[] = {
+    "Domingo", "Segunda-feira", "Ter\xC3\xA7" "a-feira", "Quarta-feira",
+    "Quinta-feira", "Sexta-feira", "S\xC3\xA1" "bado"
+  };
+
+  String dateBuf = String(timeinfo.tm_mday < 10 ? "0" : "") + String(timeinfo.tm_mday) +
+                   "." +
+                   String((timeinfo.tm_mon + 1) < 10 ? "0" : "") + String(timeinfo.tm_mon + 1) +
+                   "." + String(1900 + timeinfo.tm_year);
+
+  String full = String(weekdaysFullPt[timeinfo.tm_wday]) + " " + dateBuf;
   return full;
 }
 
@@ -4448,7 +4560,7 @@ void drawHamClock() {
   tft.setTextSize(1);
   const char *timeLabel = "UTC";
   if (screen1TimeMode == SCREEN1_TIME_LOCAL) {
-    timeLabel = (tftLanguage == TFT_LANG_EN) ? "Local Time" : "Czas Lokalny";
+    timeLabel = LANG3("Czas Lokalny", "Local Time", "Hora Local");
   }
   int labelWidth = (int)strlen(timeLabel) * 6;
   int labelX = frameX + (frameWidth - labelWidth) / 2;
@@ -4457,13 +4569,13 @@ void drawHamClock() {
 
   String dateText;
   if (screen1TimeMode == SCREEN1_TIME_LOCAL) {
-    dateText = (tftLanguage == TFT_LANG_EN)
-                 ? getEnglishDateStringFullWithTimezone()
-                 : getPolishDateStringFullWithTimezone();
+    dateText = LANG3(getPolishDateStringFullWithTimezone(),
+                     getEnglishDateStringFullWithTimezone(),
+                     getPortugueseDateStringFullWithTimezone());
   } else {
-    dateText = (tftLanguage == TFT_LANG_EN)
-                 ? getEnglishDateStringFull()
-                 : getPolishDateStringFull();
+    dateText = LANG3(getPolishDateStringFull(),
+                     getEnglishDateStringFull(),
+                     getPortugueseDateStringFull());
   }
   drawDateLine(dateText);
 
@@ -4580,13 +4692,13 @@ void updateScreen1Date() {
 
   String dateText;
   if (screen1TimeMode == SCREEN1_TIME_LOCAL) {
-    dateText = (tftLanguage == TFT_LANG_EN)
-                 ? getEnglishDateStringFullWithTimezone()
-                 : getPolishDateStringFullWithTimezone();
+    dateText = LANG3(getPolishDateStringFullWithTimezone(),
+                     getEnglishDateStringFullWithTimezone(),
+                     getPortugueseDateStringFullWithTimezone());
   } else {
-    dateText = (tftLanguage == TFT_LANG_EN)
-                 ? getEnglishDateStringFull()
-                 : getPolishDateStringFull();
+    dateText = LANG3(getPolishDateStringFull(),
+                     getEnglishDateStringFull(),
+                     getPortugueseDateStringFull());
   }
   drawDateLine(dateText);
 }
@@ -4898,6 +5010,7 @@ void updateScreen2Data() {
   // 3) Renderuj tabelÄ™ do bufora i wypchnij jednym ruchem (bez migotania)
   const bool navVisible = isTableNavFooterVisible(SCREEN_DX_CLUSTER);
   const bool enlarged = isDxTableEnlarged();
+  const bool medium = isDxTableMedium();
   const int maxRows = getDxTableMaxRows();
   const int tableTop = TFT_TABLE_TOP;
   const int tableBottom = getTableBottomForScreen(SCREEN_DX_CLUSTER);
@@ -4963,10 +5076,12 @@ void updateScreen2Data() {
         yPos += 27;
       } else {
         if (displayCount % 2 == 0) {
-          tableSprite->fillRect(0, yPos - 2, 320, 16, tftUiPalette.rowAlt);
+          tableSprite->fillRect(0, yPos - 2, 320, medium ? 20 : 16, tftUiPalette.rowAlt);
         }
 
         tableSprite->setTextSize(1);
+
+        if (medium) tableSprite->setTextFont(2);
 
         tableSprite->setTextColor(tftUiPalette.muted);
         tableSprite->setCursor(5, yPos);
@@ -4974,7 +5089,7 @@ void updateScreen2Data() {
 
         tableSprite->setTextColor(tftUiPalette.fg);
         tableSprite->setCursor(50, yPos);
-        tableSprite->print(spots[i].callsign);
+        tableSprite->print(medium ? String(spots[i].callsign).substring(0, 9) : String(spots[i].callsign));
 
         tableSprite->setTextColor(tftTableFreqColor());
         tableSprite->setCursor(125, yPos);
@@ -4989,7 +5104,9 @@ void updateScreen2Data() {
         String countryText = formatDistanceOrCountry(spots[i], COUNTRY_COL_MAX_LEN);
         tableSprite->print(countryText);
 
-        yPos += 17;
+        if (medium) tableSprite->setTextFont(1);
+
+        yPos += medium ? 20 : 17;
       }
       displayCount++;
     }
@@ -5065,10 +5182,12 @@ void updateScreen2Data() {
       yPos += 27;
     } else {
       if (displayCount % 2 == 0) {
-        tft.fillRect(0, yPos - 2, 320, 16, tftUiPalette.rowAlt);
+        tft.fillRect(0, yPos - 2, 320, medium ? 20 : 16, tftUiPalette.rowAlt);
       }
 
       tft.setTextSize(1);
+
+      if (medium) tft.setTextFont(2);
 
       tft.setTextColor(tftUiPalette.muted);
       tft.setCursor(5, yPos);
@@ -5076,7 +5195,7 @@ void updateScreen2Data() {
 
       tft.setTextColor(tftUiPalette.fg);
       tft.setCursor(50, yPos);
-      tft.print(spots[i].callsign);
+      tft.print(medium ? String(spots[i].callsign).substring(0, 9) : String(spots[i].callsign));
 
       tft.setTextColor(tftTableFreqColor());
       tft.setCursor(125, yPos);
@@ -5091,7 +5210,9 @@ void updateScreen2Data() {
       String countryText = formatDistanceOrCountry(spots[i], COUNTRY_COL_MAX_LEN);
       tft.print(countryText);
 
-      yPos += 17;
+      if (medium) tft.setTextFont(1);
+
+      yPos += medium ? 20 : 17;
     }
     displayCount++;
   }
@@ -5130,6 +5251,7 @@ void drawPotaCluster() {
 
   int yPos = 40;
   const bool enlarged = isDxTableEnlarged();
+  const bool medium = isDxTableMedium();
   tft.setTextColor(tftUiPalette.muted);
   tft.setTextSize(1);
 
@@ -5179,9 +5301,11 @@ void drawPotaCluster() {
 
       yPos += 27;
     } else {
-      if (displayCount % 2 == 0) tft.fillRect(0, yPos - 2, 320, 16, tftUiPalette.rowAlt);
+      if (displayCount % 2 == 0) tft.fillRect(0, yPos - 2, 320, medium ? 20 : 16, tftUiPalette.rowAlt);
 
       tft.setTextSize(1);
+
+      if (medium) tft.setTextFont(2);
       tft.setTextColor(tftUiPalette.muted);
       tft.setCursor(5, yPos);
       String timeStr = potaSpots[i].time;
@@ -5195,7 +5319,7 @@ void drawPotaCluster() {
 
       tft.setTextColor(tftUiPalette.fg);
       tft.setCursor(50, yPos);
-      tft.print(potaSpots[i].callsign);
+      tft.print(medium ? String(potaSpots[i].callsign).substring(0, 9) : String(potaSpots[i].callsign));
 
       tft.setTextColor(tftTableFreqColor());
       tft.setCursor(125, yPos);
@@ -5210,7 +5334,9 @@ void drawPotaCluster() {
       String countryText = formatDistanceOrCountry(potaSpots[i], COUNTRY_COL_MAX_LEN);
       tft.print(countryText);
 
-      yPos += 17;
+      if (medium) tft.setTextFont(1);
+
+      yPos += medium ? 20 : 17;
     }
     displayCount++;
   }
@@ -5313,6 +5439,7 @@ void updateScreen7Data() {
 
   const bool navVisible = isTableNavFooterVisible(SCREEN_POTA_CLUSTER);
   const bool enlarged = isDxTableEnlarged();
+  const bool medium = isDxTableMedium();
   const int maxRows = getPotaTableMaxRows();
   const int tableTop = TFT_TABLE_TOP;
   const int tableBottom = getTableBottomForScreen(SCREEN_POTA_CLUSTER);
@@ -5377,10 +5504,12 @@ void updateScreen7Data() {
         yPos += 27;
       } else {
         if (displayCount % 2 == 0) {
-          tableSprite->fillRect(0, yPos - 2, 320, 16, tftUiPalette.rowAlt);
+          tableSprite->fillRect(0, yPos - 2, 320, medium ? 20 : 16, tftUiPalette.rowAlt);
         }
 
         tableSprite->setTextSize(1);
+
+        if (medium) tableSprite->setTextFont(2);
 
         tableSprite->setTextColor(tftUiPalette.muted);
         tableSprite->setCursor(5, yPos);
@@ -5394,7 +5523,7 @@ void updateScreen7Data() {
 
         tableSprite->setTextColor(tftUiPalette.fg);
         tableSprite->setCursor(50, yPos);
-        tableSprite->print(potaSpots[i].callsign);
+        tableSprite->print(medium ? String(potaSpots[i].callsign).substring(0, 9) : String(potaSpots[i].callsign));
 
         tableSprite->setTextColor(tftTableFreqColor());
         tableSprite->setCursor(125, yPos);
@@ -5409,7 +5538,9 @@ void updateScreen7Data() {
         String countryText = formatDistanceOrCountry(potaSpots[i], COUNTRY_COL_MAX_LEN);
         tableSprite->print(countryText);
 
-        yPos += 17;
+        if (medium) tableSprite->setTextFont(1);
+
+        yPos += medium ? 20 : 17;
       }
       displayCount++;
     }
@@ -5484,10 +5615,12 @@ void updateScreen7Data() {
       yPos += 27;
     } else {
       if (displayCount % 2 == 0) {
-        tft.fillRect(0, yPos - 2, 320, 16, tftUiPalette.rowAlt);
+        tft.fillRect(0, yPos - 2, 320, medium ? 20 : 16, tftUiPalette.rowAlt);
       }
 
       tft.setTextSize(1);
+
+      if (medium) tft.setTextFont(2);
 
       tft.setTextColor(tftUiPalette.muted);
       tft.setCursor(5, yPos);
@@ -5501,7 +5634,7 @@ void updateScreen7Data() {
 
       tft.setTextColor(tftUiPalette.fg);
       tft.setCursor(50, yPos);
-      tft.print(potaSpots[i].callsign);
+      tft.print(medium ? String(potaSpots[i].callsign).substring(0, 9) : String(potaSpots[i].callsign));
 
       tft.setTextColor(tftTableFreqColor());
       tft.setCursor(125, yPos);
@@ -5516,7 +5649,9 @@ void updateScreen7Data() {
       String countryText = formatDistanceOrCountry(potaSpots[i], COUNTRY_COL_MAX_LEN);
       tft.print(countryText);
 
-      yPos += 17;
+      if (medium) tft.setTextFont(1);
+
+      yPos += medium ? 20 : 17;
     }
     displayCount++;
   }
@@ -5578,6 +5713,7 @@ void drawHamalertCluster() {
 
   int yPos = 40;
   const bool enlarged = isDxTableEnlarged();
+  const bool medium = isDxTableMedium();
   tft.setTextColor(tftUiPalette.muted);
   tft.setTextSize(1);
   if (enlarged) {
@@ -5632,10 +5768,12 @@ void drawHamalertCluster() {
       yPos += 27;
     } else {
       if (displayCount % 2 == 0) {
-        tft.fillRect(0, yPos - 2, 320, 16, tftUiPalette.rowAlt);
+        tft.fillRect(0, yPos - 2, 320, medium ? 20 : 16, tftUiPalette.rowAlt);
       }
 
       tft.setTextSize(1);
+
+      if (medium) tft.setTextFont(2);
 
       tft.setTextColor(tftUiPalette.muted);
       tft.setCursor(5, yPos);
@@ -5643,7 +5781,7 @@ void drawHamalertCluster() {
 
       tft.setTextColor(tftUiPalette.fg);
       tft.setCursor(50, yPos);
-      tft.print(hamalertSpots[i].callsign);
+      tft.print(medium ? String(hamalertSpots[i].callsign).substring(0, 9) : String(hamalertSpots[i].callsign));
 
       tft.setTextColor(tftTableFreqColor());
       tft.setCursor(125, yPos);
@@ -5658,7 +5796,9 @@ void drawHamalertCluster() {
       String countryText = formatDistanceOrCountry(hamalertSpots[i], COUNTRY_COL_MAX_LEN);
       tft.print(countryText);
 
-      yPos += 17;
+      if (medium) tft.setTextFont(1);
+
+      yPos += medium ? 20 : 17;
     }
     displayCount++;
   }
@@ -5757,6 +5897,7 @@ void updateScreen8Data() {
   lastSig = currentSig;
 
   const bool enlarged = isDxTableEnlarged();
+  const bool medium = isDxTableMedium();
   const int maxRows = getHamalertTableMaxRows();
   const int tableTop = TFT_TABLE_TOP;
   const int tableBottom = getTableBottomForScreen(SCREEN_HAMALERT_CLUSTER);
@@ -5821,10 +5962,12 @@ void updateScreen8Data() {
       yPos += 27;
     } else {
       if (displayCount % 2 == 0) {
-        tft.fillRect(0, yPos - 2, 320, 16, tftUiPalette.rowAlt);
+        tft.fillRect(0, yPos - 2, 320, medium ? 20 : 16, tftUiPalette.rowAlt);
       }
 
       tft.setTextSize(1);
+
+      if (medium) tft.setTextFont(2);
 
       tft.setTextColor(tftUiPalette.muted);
       tft.setCursor(5, yPos);
@@ -5832,7 +5975,7 @@ void updateScreen8Data() {
 
       tft.setTextColor(tftUiPalette.fg);
       tft.setCursor(50, yPos);
-      tft.print(hamalertSpots[i].callsign);
+      tft.print(medium ? String(hamalertSpots[i].callsign).substring(0, 9) : String(hamalertSpots[i].callsign));
 
       tft.setTextColor(tftTableFreqColor());
       tft.setCursor(125, yPos);
@@ -5847,7 +5990,9 @@ void updateScreen8Data() {
       String countryText = formatDistanceOrCountry(hamalertSpots[i], COUNTRY_COL_MAX_LEN);
       tft.print(countryText);
 
-      yPos += 17;
+      if (medium) tft.setTextFont(1);
+
+      yPos += medium ? 20 : 17;
     }
     displayCount++;
   }
@@ -6354,6 +6499,7 @@ tft.print(clusterHost);
 
   // 2. NAGĹĂ“WKI TABELI
   const bool enlarged = isDxTableEnlarged();
+  const bool medium = isDxTableMedium();
   int yPos = 40;
   tft.setTextColor(tftUiPalette.muted);
   tft.setTextSize(1);
@@ -6405,16 +6551,18 @@ tft.print(clusterHost);
       tft.print(modeText);
       yPos += 27;
     } else {
-      if (displayCount % 2 == 0) tft.fillRect(0, yPos - 2, 320, 16, tftUiPalette.rowAlt);
+      if (displayCount % 2 == 0) tft.fillRect(0, yPos - 2, 320, medium ? 20 : 16, tftUiPalette.rowAlt);
 
       tft.setTextSize(1);
+
+      if (medium) tft.setTextFont(2);
       tft.setTextColor(tftUiPalette.muted);
       tft.setCursor(5, yPos);
       tft.print(formatSpotUtc(spots[i].time));
 
       tft.setTextColor(tftUiPalette.fg);
       tft.setCursor(50, yPos);
-      tft.print(spots[i].callsign);
+      tft.print(medium ? String(spots[i].callsign).substring(0, 9) : String(spots[i].callsign));
 
       tft.setTextColor(tftTableFreqColor());
       tft.setCursor(125, yPos);
@@ -6429,7 +6577,9 @@ tft.print(clusterHost);
       String countryText = formatDistanceOrCountry(spots[i], COUNTRY_COL_MAX_LEN);
       tft.print(countryText);
 
-      yPos += 17;
+      if (medium) tft.setTextFont(1);
+
+      yPos += medium ? 20 : 17;
     }
     displayCount++;
   }
@@ -7319,10 +7469,9 @@ void drawBrightnessMenuHeader() {
   uint16_t btnFill = isTftStyleLight() ? TFT_WHITE : TFT_BLACK;
   uint16_t btnBorder = isTftStyleLight() ? TFT_BLACK : TFT_WHITE;
   uint16_t btnText = isTftStyleLight() ? TFT_BLACK : TFT_WHITE;
-  const bool isPl = (tftLanguage == TFT_LANG_PL);
-  const char *btnLabel = isPl
-      ? (isTftStyleLight() ? "JASNY" : "CIEMNY")
-      : (isTftStyleLight() ? "LIGHT" : "DARK");
+  const char *btnLabel = isTftStyleLight()
+      ? LANG3("JASNY", "LIGHT", "CLARO")
+      : LANG3("CIEMNY", "DARK", "ESCURO");
   int textW = strlen(btnLabel) * 6;
 
   tft.fillRoundRect(themeBtnX, themeBtnY, themeBtnW, themeBtnH, 4, btnFill);
@@ -7350,7 +7499,7 @@ void drawBrightnessMenu() {
   const int langTileW = 70;
   const int langTileH = 22;
   const int langGap = 10;
-  const int langStartX = (320 - (2 * langTileW + langGap)) / 2;
+  const int langStartX = (320 - (3 * langTileW + 2 * langGap)) / 2;
   const int langY = 160;
 
   tft.setTextColor(TFT_LIGHTGREY);
@@ -7359,6 +7508,7 @@ void drawBrightnessMenu() {
   tft.print(tr(TR_LANGUAGE));
   drawFilterTile(langStartX, langY, langTileW, langTileH, "PL", tftLanguage == TFT_LANG_PL);
   drawFilterTile(langStartX + langTileW + langGap, langY, langTileW, langTileH, "EN", tftLanguage == TFT_LANG_EN);
+  drawFilterTile(langStartX + 2 * (langTileW + langGap), langY, langTileW, langTileH, "PT", tftLanguage == TFT_LANG_PT);
 
   const int btnW = 90;
   const int btnH = 26;
@@ -7640,7 +7790,7 @@ void handleBrightnessMenuTouch(uint16_t x, uint16_t y, bool isNewTap) {
   const int langTileW = 70;
   const int langTileH = 22;
   const int langGap = 10;
-  const int langStartX = (320 - (2 * langTileW + langGap)) / 2;
+  const int langStartX = (320 - (3 * langTileW + 2 * langGap)) / 2;
   const int langY = 160;
 
   // Obsługa sliderów
@@ -7670,6 +7820,22 @@ void handleBrightnessMenuTouch(uint16_t x, uint16_t y, bool isNewTap) {
     }
     if (isPointInRect(x, y, langStartX + langTileW + langGap, langY, langTileW, langTileH)) {
       tftLanguage = TFT_LANG_EN;
+      // Wymuś odświeżenie opisów pogody po zmianie języka
+      lastWeatherFetchMs = 0;
+      lockWeatherData();
+      weatherData.valid = false;
+      weatherData.forecast3hValid = false;
+      weatherData.forecastNextDayValid = false;
+      for (uint8_t i = 0; i < WeatherData::DETAIL_COLS; i++) {
+        weatherData.detailValid[i] = false;
+      }
+      unlockWeatherData();
+      savePreferences();
+      drawBrightnessMenu();
+      return;
+    }
+    if (isPointInRect(x, y, langStartX + 2 * (langTileW + langGap), langY, langTileW, langTileH)) {
+      tftLanguage = TFT_LANG_PT;
       // Wymuś odświeżenie opisów pogody po zmianie języka
       lastWeatherFetchMs = 0;
       lockWeatherData();
@@ -7840,6 +8006,7 @@ void updateScreen6Data() {
   // 3) Renderuj tabelÄ™ do bufora i wypchnij jednym ruchem (bez migotania)
   const bool navVisible = isTableNavFooterVisible(SCREEN_APRS_IS);
   const bool enlarged = isDxTableEnlarged();
+  const bool medium = isDxTableMedium();
   const int maxRows = getAprsTableMaxRows();
   const int aprsKmXEnlarged = 195;
   const int aprsFreqXEnlarged = 234;
@@ -7917,10 +8084,12 @@ void updateScreen6Data() {
         yPos += 27;
       } else {
         if (i % 2 == 0) {
-          tableSprite->fillRect(0, yPos - 2, 320, 16, tftUiPalette.rowAlt);
+          tableSprite->fillRect(0, yPos - 2, 320, medium ? 20 : 16, tftUiPalette.rowAlt);
         }
 
         tableSprite->setTextSize(1);
+
+        if (medium) tableSprite->setTextFont(2);
 
         tableSprite->setTextColor(tftUiPalette.muted);
         tableSprite->setCursor(5, yPos);
@@ -7929,7 +8098,7 @@ void updateScreen6Data() {
 
         tableSprite->setTextColor(tftUiPalette.fg);
         tableSprite->setCursor(50, yPos);
-        tableSprite->print(station.callsign);
+        tableSprite->print(medium ? String(station.callsign).substring(0, 9) : String(station.callsign));
 
         String symbolShort = getAPRSSymbolShort(station);
         uint16_t symbolColor = TFT_GREEN;
@@ -7965,7 +8134,9 @@ void updateScreen6Data() {
           tableSprite->print("-");
         }
 
-        yPos += 17;
+        if (medium) tableSprite->setTextFont(1);
+
+        yPos += medium ? 20 : 17;
       }
     }
 
@@ -8047,10 +8218,12 @@ void updateScreen6Data() {
       yPos += 27;
     } else {
       if (i % 2 == 0) {
-        tft.fillRect(0, yPos - 2, 320, 16, tftUiPalette.rowAlt);
+        tft.fillRect(0, yPos - 2, 320, medium ? 20 : 16, tftUiPalette.rowAlt);
       }
 
       tft.setTextSize(1);
+
+      if (medium) tft.setTextFont(2);
 
       tft.setTextColor(tftUiPalette.muted);
       tft.setCursor(5, yPos);
@@ -8059,7 +8232,7 @@ void updateScreen6Data() {
 
       tft.setTextColor(tftUiPalette.fg);
       tft.setCursor(50, yPos);
-      tft.print(station.callsign);
+      tft.print(medium ? String(station.callsign).substring(0, 9) : String(station.callsign));
 
       String symbolShort = getAPRSSymbolShort(station);
       uint16_t symbolColor = TFT_GREEN;
@@ -8095,7 +8268,9 @@ void updateScreen6Data() {
         tft.print("-");
       }
 
-      yPos += 17;
+      if (medium) tft.setTextFont(1);
+
+      yPos += medium ? 20 : 17;
     }
   }
 
@@ -8145,6 +8320,7 @@ void drawAprsIs() {
   // 2. NAGĹĂ“WKI TABELI
   int yPos = 40;
   const bool enlarged = isDxTableEnlarged();
+  const bool medium = isDxTableMedium();
   tft.setTextColor(tftUiPalette.muted);
   tft.setTextSize(1);
   if (enlarged) {
@@ -8203,9 +8379,11 @@ void drawAprsIs() {
 
       yPos += 27;
     } else {
-      if (i % 2 == 0) tft.fillRect(0, yPos - 2, 320, 16, tftUiPalette.rowAlt);
+      if (i % 2 == 0) tft.fillRect(0, yPos - 2, 320, medium ? 20 : 16, tftUiPalette.rowAlt);
 
       tft.setTextSize(1);
+
+      if (medium) tft.setTextFont(2);
       tft.setTextColor(tftUiPalette.muted);
       tft.setCursor(5, yPos);
       String timeStr = formatAprsTimeWithTimezone(station.time);
@@ -8213,7 +8391,7 @@ void drawAprsIs() {
 
       tft.setTextColor(tftUiPalette.fg);
       tft.setCursor(50, yPos);
-      tft.print(station.callsign);
+      tft.print(medium ? String(station.callsign).substring(0, 9) : String(station.callsign));
 
       String symbolShort = getAPRSSymbolShort(station);
       uint16_t symbolColor = TFT_GREEN;
@@ -8249,7 +8427,9 @@ void drawAprsIs() {
         tft.print("-");
       }
 
-      yPos += 17;
+      if (medium) tft.setTextFont(1);
+
+      yPos += medium ? 20 : 17;
     }
   }
 
@@ -8470,6 +8650,21 @@ static uint16_t conditionColor(String cond) {
   return TFT_LIGHTGREY;
 }
 
+// Translates the HF band condition text (Good/Fair/Poor) for display only.
+// The raw value is kept untouched for conditionColor() and the web API.
+static String conditionLabel(const String &cond) {
+  if (tftLanguage != TFT_LANG_PT) {
+    return cond;
+  }
+  String up = cond;
+  up.toUpperCase();
+  up.trim();
+  if (up == "GOOD") return (cond == up) ? "BOA" : "Boa";
+  if (up == "FAIR") return (cond == up) ? "MEDIA" : "Media";
+  if (up == "POOR") return (cond == up) ? "RUIM" : "Ruim";
+  return cond;
+}
+
 void drawSunSpotsBody() {
   const int bodyTop = 32;
   const int bodyBottom = 240;
@@ -8535,7 +8730,7 @@ void drawSunSpotsBody() {
   tft.setTextSize(1);
   tft.setTextColor(tftUiPalette.muted);
   tft.setCursor(10, 210);
-  tft.print("UPDATED UTC");
+  tft.print(LANG3("UPDATED UTC", "UPDATED UTC", "ATUALIZADO UTC"));
   tft.setTextSize(2);
   tft.setTextColor(tftUiPalette.fg);
   tft.setCursor(10, 222);
@@ -8578,7 +8773,7 @@ void drawSunSpots() {
 
   tft.setTextSize(2);
   tft.setCursor(35, 8);
-  tft.print((tftLanguage == TFT_LANG_EN) ? "PROPAGATION" : "PROPAGACJA");
+  tft.print(LANG3("PROPAGACJA", "PROPAGATION", "PROPAGACAO"));
 
   struct tm timeinfo;
   if (getLocalTime(&timeinfo, 1)) {
@@ -8657,11 +8852,11 @@ void drawBandInfoBody() {
   tft.setTextColor(tftUiPalette.muted);
   tft.setTextSize(2);
   tft.setCursor(5, yPos);
-  tft.print("BAND");
+  tft.print(LANG3("BAND", "BAND", "BANDA"));
   tft.setCursor(150, yPos);
-  tft.print("DAY");
+  tft.print(LANG3("DAY", "DAY", "DIA"));
   tft.setCursor(240, yPos);
-  tft.print("NIGHT");
+  tft.print(LANG3("NIGHT", "NIGHT", "NOITE"));
   tft.drawFastHLine(0, yPos + 30, 320, tftUiPalette.muted);
   yPos += 26; //byĹ‚o 16
 
@@ -8686,7 +8881,7 @@ void drawBandInfoBody() {
     }
     tft.setTextColor(dayColor);
     tft.setCursor(150, yPos - 2);
-    tft.print(propagationData.hfBandDay[i]);
+    tft.print(conditionLabel(propagationData.hfBandDay[i]));
 
     uint16_t nightColor = conditionColor(propagationData.hfBandNight[i]);
     if (isTftStyleLight()) {
@@ -8694,7 +8889,7 @@ void drawBandInfoBody() {
     }
     tft.setTextColor(nightColor);
     tft.setCursor(240, yPos - 2);
-    tft.print(propagationData.hfBandNight[i]);
+    tft.print(conditionLabel(propagationData.hfBandNight[i]));
 
     yPos += 30;
   }
@@ -8702,7 +8897,7 @@ void drawBandInfoBody() {
   tft.setTextSize(1);
   tft.setTextColor(tftUiPalette.muted);
   tft.setCursor(10, 190);
-  tft.print("UPDATED UTC");
+  tft.print(LANG3("UPDATED UTC", "UPDATED UTC", "ATUALIZADO UTC"));
   tft.setTextSize(2);
   tft.setTextColor(tftUiPalette.fg);
   tft.setCursor(10, 202);
@@ -8807,7 +9002,7 @@ bool fetchWeatherData() {
   WiFiClientSecure client;
   client.setInsecure();
 
-  String langParam = (tftLanguage == TFT_LANG_EN) ? "en" : "pl";
+  String langParam = LANG3("pl", "en", "pt_br");
   String url = "https://api.openweathermap.org/data/2.5/weather?lat=" +
                String(lat, 4) + "&lon=" + String(lon, 4) +
                "&appid=" + weatherApiKey + "&units=metric&lang=" + langParam;
@@ -8923,7 +9118,7 @@ bool fetchWeatherForecast(double lat, double lon) {
     return setForecastError("Forecast: No API key");
   }
 
-  String langParam = (tftLanguage == TFT_LANG_EN) ? "en" : "pl";
+  String langParam = LANG3("pl", "en", "pt_br");
   String paramsWithLang = "lat=" + String(lat, 4) +
                           "&lon=" + String(lon, 4) +
                           "&appid=" + weatherApiKey +
@@ -9616,11 +9811,11 @@ void drawWeatherBody() {
     tft.setTextSize(1);
     tft.setTextColor(bodyMuted);
     tft.setCursor(15, 120);
-    tft.print(tr(TR_HUMIDITY));
+    tft.print(sanitizePolishToAscii(tr(TR_HUMIDITY)));
     tft.setCursor(15, 145);
-    tft.print(tr(TR_PRESSURE));
+    tft.print(sanitizePolishToAscii(tr(TR_PRESSURE)));
     tft.setCursor(15, 170);
-    tft.print(tr(TR_WIND));
+    tft.print(sanitizePolishToAscii(tr(TR_WIND)));
   }
 
   // 2. TEMPERATURA (Lewa strona)
@@ -9721,14 +9916,15 @@ static void drawWeatherDetailIconCell(int x, int y, int weatherId, const String 
 }
 
 static void buildWeatherDetailHeaders(String headers[WeatherData::DETAIL_COLS]) {
-  headers[0] = (tftLanguage == TFT_LANG_EN) ? "+3h" : "+3godz";
-  headers[1] = (tftLanguage == TFT_LANG_EN) ? "+6h" : "+6godz";
+  headers[0] = LANG3("+3godz", "+3h", "+3h");
+  headers[1] = LANG3("+6godz", "+6h", "+6h");
 
   struct tm timeinfo;
   if (getTimeWithTimezone(&timeinfo)) {
     static const char *daysPl[7] = {"Nd", "Pn", "Wt", "Śr", "Czw", "Pt", "Sob"};
     static const char *daysEn[7] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
-    const char **days = (tftLanguage == TFT_LANG_EN) ? daysEn : daysPl;
+    static const char *daysPt[7] = {"Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "S\xC3\xA1" "b"};
+    const char **days = LANG3(daysPl, daysEn, daysPt);
 
     for (uint8_t i = 0; i < 3; i++) {
       int dayIdx = (timeinfo.tm_wday + 1 + i) % 7;
@@ -9777,11 +9973,11 @@ void drawWeatherDetailPage() {
     tft.setTextColor(lightTheme ? TFT_BLACK : TFT_YELLOW);
     tft.setTextSize(2);
     tft.setCursor(12, 84);
-    tft.print((tftLanguage == TFT_LANG_EN) ? "No forecast" : "Brak prognozy");
+    tft.print(LANG3("Brak prognozy", "No forecast", "Sem previsao"));
 
     String err = weatherData.forecastError;
     if (err.length() == 0) {
-      err = (tftLanguage == TFT_LANG_EN) ? "Forecast: no data from API" : "Prognoza: brak danych z API";
+      err = LANG3("Prognoza: brak danych z API", "Forecast: no data from API", "Previsao: sem dados da API");
     }
     const int maxChars = 42;
     if ((int)err.length() > maxChars) {
@@ -9888,9 +10084,9 @@ static void drawWeatherFooterArea(ScreenType screenId) {
   }
   cityLabel = sanitizePolishToAscii(cityLabel);
 
-  const String prefix = (tftLanguage == TFT_LANG_EN)
-                        ? "Weather for location: "
-                        : "Pogoda dla lokalizacji: ";
+  const String prefix = LANG3("Pogoda dla lokalizacji: ",
+                              "Weather for location: ",
+                              "Clima do local: ");
   const int maxChars = 52; // 320px width at text size 1 (6px/char) with small margins
   int maxCityChars = maxChars - (int)prefix.length();
   if (maxCityChars < 3) {
@@ -9981,7 +10177,7 @@ void drawWeatherForecast() {
   tft.fillRect(0, 0, 320, 32, TFT_RADIO_ORANGE);
   tft.setTextColor(TFT_BLACK);
 
-  const char *detailHeader = (tftLanguage == TFT_LANG_EN) ? "Weather forecast" : "Prognoza pogody";
+  const char *detailHeader = LANG3("Prognoza pogody", "Weather forecast", "Previsao do tempo");
   tft.setTextSize(2);
   tft.setCursor(35, 8);
   tft.print(detailHeader);
@@ -11661,7 +11857,7 @@ void ALERT_Screen(const APRSStation &station) {
     iconColor = TFT_BLUE;
   }
   if (weatherAlert) {
-    const String weatherTitle = (tftLanguage == TFT_LANG_EN) ? "Weather:" : "Pogoda:";
+    const String weatherTitle = LANG3("Pogoda:", "Weather:", "Clima:");
     tft.setTextColor(TFT_CYAN);
     tft.setTextSize(2);
     int weatherTitleX = (320 - ((int)weatherTitle.length() * 12)) / 2;
@@ -11679,9 +11875,9 @@ void ALERT_Screen(const APRSStation &station) {
     decodeAprsWxFromComment(station.comment, wx);
 
     const String labelTemp = "TEMP";
-    const String labelHumidity = (tftLanguage == TFT_LANG_EN) ? "HUMIDITY" : "WILGOTNOŚĆ";
-    const String labelPressure = (tftLanguage == TFT_LANG_EN) ? "PRESSURE" : "CISNIENIE";
-    const String labelWind = "WIATR";
+    const String labelHumidity = LANG3("WILGOTNOŚĆ", "HUMIDITY", "UMIDADE");
+    const String labelPressure = LANG3("CISNIENIE", "PRESSURE", "PRESSAO");
+    const String labelWind = (tftLanguage == TFT_LANG_PT) ? "VENTO" : "WIATR";
     const String labelTempWithColon = labelTemp + ":";
     const String labelHumidityWithColon = labelHumidity + ":";
     const String labelPressureWithColon = labelPressure + ":";
@@ -11883,7 +12079,7 @@ void WEATHER_ALERT_Screen(const WeatherAlertInfo &info) {
 
   tft.setTextColor(TFT_BLACK);
   tft.setTextSize(2);
-  String headerText = (tftLanguage == TFT_LANG_EN) ? "WEATHER ALERT" : "ALERT POGODOWY";
+  String headerText = LANG3("ALERT POGODOWY", "WEATHER ALERT", "ALERTA DE CLIMA");
   int headerX = (320 - ((int)headerText.length() * 12)) / 2;
   if (headerX < 6) {
     headerX = 6;
@@ -11903,8 +12099,8 @@ void WEATHER_ALERT_Screen(const WeatherAlertInfo &info) {
   tft.setTextColor(TFT_WHITE);
   tft.setTextSize(3);
   if (info.stormPossible) {
-    String stormLine1 = (tftLanguage == TFT_LANG_EN) ? "POSSIBLE" : "MOZLIWA";
-    String stormLine2 = (tftLanguage == TFT_LANG_EN) ? "STORM" : "BURZA";
+    String stormLine1 = LANG3("MOZLIWA", "POSSIBLE", "POSSIVEL");
+    String stormLine2 = LANG3("BURZA", "STORM", "TEMPESTADE");
 
     int stormX1 = (320 - ((int)stormLine1.length() * 18)) / 2;
     int stormX2 = (320 - ((int)stormLine2.length() * 18)) / 2;
@@ -11920,7 +12116,7 @@ void WEATHER_ALERT_Screen(const WeatherAlertInfo &info) {
     tft.print(stormLine2);
     line2Y = 120;
   } else {
-    String mainLine = (tftLanguage == TFT_LANG_EN) ? "STRONG WIND" : "SILNY WIATR";
+    String mainLine = LANG3("SILNY WIATR", "STRONG WIND", "VENTO FORTE");
     int mainX = (320 - ((int)mainLine.length() * 18)) / 2;
     if (mainX < 72) {
       mainX = 72;
@@ -11932,14 +12128,14 @@ void WEATHER_ALERT_Screen(const WeatherAlertInfo &info) {
   String line2;
   if (info.stormPossible) {
     if (info.stormNow) {
-      line2 = (tftLanguage == TFT_LANG_EN) ? "STORM NOW" : "BURZA TERAZ";
+      line2 = LANG3("BURZA TERAZ", "STORM NOW", "TEMPESTADE AGORA");
     } else {
-      line2 = (tftLanguage == TFT_LANG_EN)
-                ? ("ETA<=" + String(info.stormEtaHours) + " h")
-                : ("ETA<= " + String(info.stormEtaHours) + "godz");
+      line2 = (tftLanguage == TFT_LANG_PL)
+                ? ("ETA<= " + String(info.stormEtaHours) + "godz")
+                : ("ETA<=" + String(info.stormEtaHours) + " h");
     }
   } else {
-    line2 = (tftLanguage == TFT_LANG_EN) ? "Forecast <= 6h" : "Prognoza <= 6h";
+    line2 = LANG3("Prognoza <= 6h", "Forecast <= 6h", "Previsao <= 6h");
   }
   tft.setTextColor(TFT_LIGHTGREY);
   tft.setTextSize(2);
@@ -11956,9 +12152,7 @@ void WEATHER_ALERT_Screen(const WeatherAlertInfo &info) {
     uint8_t repeatMin = info.stormEtaHours;
     if (repeatMin < 1) repeatMin = 1;
     if (repeatMin > 6) repeatMin = 6;
-    String repeatLine = (tftLanguage == TFT_LANG_EN)
-                          ? ("Repeat: " + String(repeatMin) + " min")
-                          : ("Powtorz: " + String(repeatMin) + " min");
+    String repeatLine = String(LANG3("Powtorz: ", "Repeat: ", "Repetir: ")) + String(repeatMin) + " min";
     tft.setTextColor(TFT_CYAN);
     tft.setCursor(74, detailY);
     tft.print(repeatLine);
@@ -11966,8 +12160,8 @@ void WEATHER_ALERT_Screen(const WeatherAlertInfo &info) {
   }
 
   if (info.windPossible) {
-    String windLabel = (tftLanguage == TFT_LANG_EN) ? "Wind: " : "Wiatr: ";
-    String gustLabel = (tftLanguage == TFT_LANG_EN) ? "Gust: " : "MAX: ";
+    String windLabel = LANG3("Wiatr: ", "Wind: ", "Vento: ");
+    String gustLabel = LANG3("MAX: ", "Gust: ", "Rajada: ");
     String windLine = windLabel + String(info.maxWindMs, 1) + " m/s";
     tft.setTextColor(TFT_YELLOW);
     tft.setCursor(74, detailY);
@@ -11984,9 +12178,9 @@ void WEATHER_ALERT_Screen(const WeatherAlertInfo &info) {
 
   tft.setTextColor(TFT_LIGHTGREY);
   tft.setTextSize(1);
-  String footer = (tftLanguage == TFT_LANG_EN)
-                    ? "Based on OpenWeather forecast"
-                    : "Na podstawie prognozy OpenWeather";
+  String footer = LANG3("Na podstawie prognozy OpenWeather",
+                        "Based on OpenWeather forecast",
+                        "Baseado na previsao do OpenWeather");
   tft.setCursor(20, 220);
   tft.print(footer);
 }
@@ -15861,11 +16055,11 @@ void loadPreferences() {
   if (tftNightDimmingPercent > 100) tftNightDimmingPercent = 100;
   tftInvertColors = preferences->getBool("tft_inv", tftInvertColors);
   tftLanguage = preferences->getUChar("tft_lang", TFT_LANG_PL);
-  if (tftLanguage > TFT_LANG_EN) tftLanguage = TFT_LANG_PL;
+  if (tftLanguage > TFT_LANG_PT) tftLanguage = TFT_LANG_PL;
   tftStyleMode = preferences->getUChar("tft_style", TFT_STYLE_DARK);
   if (tftStyleMode > TFT_STYLE_LIGHT) tftStyleMode = TFT_STYLE_DARK;
   dxTableSizeMode = preferences->getUChar("tft_tbl_size", DX_TABLE_SIZE_NORMAL);
-  if (dxTableSizeMode > DX_TABLE_SIZE_ENLARGED) dxTableSizeMode = DX_TABLE_SIZE_NORMAL;
+  if (dxTableSizeMode > DX_TABLE_SIZE_MEDIUM) dxTableSizeMode = DX_TABLE_SIZE_NORMAL;
   int savedMenuHue = preferences->getInt("menu_hue", DEFAULT_MENU_THEME_HUE);
   if (savedMenuHue < 0) savedMenuHue = 0;
   if (savedMenuHue > 255) savedMenuHue = 255;
@@ -16146,6 +16340,22 @@ void setupWebServer() {
     if (!streamLittleFsFile("/indexEN.html", "text/html; charset=utf-8") &&
         !streamLittleFsFile("/index.html", "text/html; charset=utf-8")) {
       server->send(404, "text/plain", "indexEN.html missing in LittleFS");
+    }
+  });
+
+  // Main page (PT-BR)
+  server->on("/indexPT.html", HTTP_GET, []() {
+    if (!streamLittleFsFile("/indexPT.html", "text/html; charset=utf-8") &&
+        !streamLittleFsFile("/indexEN.html", "text/html; charset=utf-8") &&
+        !streamLittleFsFile("/index.html", "text/html; charset=utf-8")) {
+      server->send(404, "text/plain", "indexPT.html missing in LittleFS");
+    }
+  });
+
+  // Manual (PT-BR)
+  server->on("/manual_pt.txt", HTTP_GET, []() {
+    if (!streamLittleFsFile("/manual_pt.txt", "text/plain; charset=utf-8")) {
+      server->send(404, "text/plain", "manual_pt.txt missing in LittleFS");
     }
   });
 
@@ -16478,7 +16688,7 @@ void setupWebServer() {
         tftLanguage = tftLangFromCode(doc["tft_lang"].as<String>());
       } else if (doc["tft_lang"].is<int>()) {
         int lang = doc["tft_lang"].as<int>();
-        tftLanguage = (lang == TFT_LANG_EN) ? TFT_LANG_EN : TFT_LANG_PL;
+        tftLanguage = (lang == TFT_LANG_EN) ? TFT_LANG_EN : ((lang == TFT_LANG_PT) ? TFT_LANG_PT : TFT_LANG_PL);
       }
       if (doc["tft_style"].is<String>()) {
         tftStyleMode = tftStyleFromCode(doc["tft_style"].as<String>());
@@ -16492,7 +16702,8 @@ void setupWebServer() {
         dxTableSizeMode = dxTableSizeFromCode(doc["table_size"].as<String>());
       } else if (doc["table_size"].is<int>()) {
         int sizeMode = doc["table_size"].as<int>();
-        dxTableSizeMode = (sizeMode == DX_TABLE_SIZE_ENLARGED) ? DX_TABLE_SIZE_ENLARGED : DX_TABLE_SIZE_NORMAL;
+        dxTableSizeMode = (sizeMode == DX_TABLE_SIZE_ENLARGED) ? DX_TABLE_SIZE_ENLARGED
+                         : ((sizeMode == DX_TABLE_SIZE_MEDIUM) ? DX_TABLE_SIZE_MEDIUM : DX_TABLE_SIZE_NORMAL);
       }
       if (doc["menu_hue"].is<int>()) {
         int hue = doc["menu_hue"].as<int>();
