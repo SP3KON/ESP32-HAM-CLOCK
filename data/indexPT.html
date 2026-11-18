@@ -1,0 +1,2470 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ESP32-HAM-CLOCK</title>
+<link rel="stylesheet" href="style.base.css">
+<link rel="stylesheet" href="style.desktop.css" media="(min-width: 901px)">
+<link rel="stylesheet" href="style.mobile.css" media="(max-width: 900px)">
+</head>
+<body>
+<a class="coffee-link" href="https://buycoffee.to/esp32hamclock" target="_blank" rel="noopener noreferrer">Se gostou, ME PAGUE UM CAFÉ</a>
+<div class="app-title">ESP32-HAM-CLOCK</div>
+<div class="nav">
+<button class="nav-btn active" onclick="showPage('dxspot')">DXSPOT</button>
+<button class="nav-btn" onclick="showPage('pota')">POTA</button>
+<button class="nav-btn" onclick="showPage('hamalert')">HAMALERT</button>
+<button class="nav-btn" onclick="showPage('aprs')">APRS</button>
+<button class="nav-btn" onclick="showPage('propagation')">Propagação</button>
+<button class="nav-btn" onclick="showPage('alert')">ALERTA</button>
+<button class="nav-btn" onclick="showPage('tft')">Tela TFT</button>
+<button class="nav-btn" onclick="showPage('config')">&#9881; Configurações</button>
+<button class="nav-btn" onclick="showPage('manual')">Manual</button>
+<button class="nav-btn links-nav-entry" onclick="showPage('links')">Links</button>
+<div class="lang-switch">
+<a class="lang-link" href="/indexEN.html">EN</a>
+<span>|</span>
+<a class="lang-link" href="/index.html">PL</a>
+<span>|</span>
+<a class="lang-link active" href="/indexPT.html">PT</a>
+</div>
+</div>
+<div id="dxspot-page" class="page active">
+<div class="cyd-container dx-mobile-shell">
+<h2 class="dx-panel-title">DX Cluster</h2>
+<div class="cyd-screen">
+<div class="controls">
+<div class="control-group">
+<span class="dx-control-label">Modo:</span>
+<button class="btn active" onclick="setMode('All', this)">ALL</button>
+<button class="btn" onclick="setMode('CW', this)">CW</button>
+<button class="btn" onclick="setMode('SSB', this)">SSB</button>
+<button class="btn" onclick="setMode('FT8FT4', this)">FT8/FT4</button>
+</div>
+<div class="control-group">
+<span class="dx-control-label">Banda:</span>
+<div class="dx-band-grid">
+<button class="btn active" onclick="setBand('All', this)">ALL</button>
+<button class="btn" onclick="setBand('160m', this)">160m</button>
+<button class="btn" onclick="setBand('80m', this)">80m</button>
+<button class="btn" onclick="setBand('40m', this)">40m</button>
+<button class="btn" onclick="setBand('20m', this)">20m</button>
+<button class="btn" onclick="setBand('17m', this)">17m</button>
+<button class="btn" onclick="setBand('15m', this)">15m</button>
+<button class="btn" onclick="setBand('12m', this)">12m</button>
+<button class="btn" onclick="setBand('10m', this)">10m</button>
+<span class="dx-band-spacer" aria-hidden="true"></span>
+</div>
+</div>
+</div>
+<table id="spots-table">
+<thead>
+<tr>
+<th>UTC</th>
+<th>INDICATIVO</th>
+<th>MHz</th>
+<th>MODE</th>
+<th>PAÍS</th>
+</tr>
+</thead>
+<tbody id="spots-tbody">
+</tbody>
+</table>
+<div class="status" id="status">Aguardando dados...</div>
+</div>
+</div>
+<div class="continent-filters dx-continent-filters">
+<div class="title">Spot de:</div>
+<div class="row">
+<label><input type="checkbox" id="cont_af" checked>AF</label>
+<label><input type="checkbox" id="cont_an" checked>AN</label>
+<label><input type="checkbox" id="cont_as" checked>AS</label>
+<label><input type="checkbox" id="cont_eu" checked>EU</label>
+<label><input type="checkbox" id="cont_na" checked>NA</label>
+<label><input type="checkbox" id="cont_sa" checked>SA</label>
+<label><input type="checkbox" id="cont_oc" checked>OC</label>
+</div>
+</div>
+</div>
+<div id="aprs-page" class="page">
+<div class="cyd-container dx-mobile-shell aprs-mobile-shell">
+<h2 class="dx-panel-title">APRS</h2>
+<div class="cyd-screen">
+<div class="controls">
+<div class="control-group">
+<span class="dx-control-label">&#x21C5; Ordenar:</span>
+<button class="btn active" id="aprs-sort-time" onclick="setAprsSort('time')">&#x1F552; Hora</button>
+<button class="btn" id="aprs-sort-dist" onclick="setAprsSort('dist')">&#x1F4CD; Distância</button>
+<button class="btn" id="aprs-sort-name" onclick="setAprsSort('name')">&#x1F4DB; Nome</button>
+</div>
+</div>
+<table id="aprs-table">
+<thead>
+<tr>
+<th>HORA</th>
+<th>INDICATIVO</th>
+<th>SÍMB</th>
+<th>km</th>
+<th>MHz</th>
+<th class="aprs-comment-col">Comentários</th>
+</tr>
+</thead>
+<tbody id="aprs-tbody">
+</tbody>
+</table>
+<div class="status" id="aprs-status">Aguardando dados APRS...</div>
+</div>
+</div>
+</div>
+<div id="propagation-page" class="page">
+<div class="cyd-container dx-mobile-shell propagation-mobile-shell">
+<h2 class="dx-panel-title">PROPAGAÇÃO</h2>
+<div class="cyd-screen">
+<h3 class="prop-section-title">PROPAGAÇÃO</h3>
+<table id="propagation-table" class="prop-metrics-table">
+<tbody>
+<tr><th>ÍNDICE DE FLUXO SOLAR</th><td id="prop-sfi">--</td></tr>
+<tr><th>ÍNDICE K</th><td id="prop-kindex">--</td></tr>
+<tr><th>ÍNDICE A</th><td id="prop-aindex">--</td></tr>
+<tr><th>MUF</th><td id="prop-muf">--</td></tr>
+<tr><th>ATUALIZADO (UTC)</th><td id="prop-updated">--</td></tr>
+</tbody>
+</table>
+<h3 class="prop-section-title prop-section-title-secondary">INFO DAS BANDAS HF</h3>
+<table id="propagation-hf-table" class="prop-hf-table">
+<thead>
+<tr>
+<th>Banda</th>
+<th>Dia</th>
+<th>Noite</th>
+</tr>
+</thead>
+<tbody id="prop-hf-tbody"></tbody>
+</table>
+<div class="status" id="propagation-status">Aguardando dados de propagação...</div>
+</div>
+</div>
+</div>
+<div id="tft-page" class="page">
+<div class="config-form">
+<h2 style="color: #e0e0e0; margin-bottom: 20px; text-align: center;">Configurações do TFT</h2>
+<div class="config-section">
+<h3>💡 Luz de fundo do TFT</h3>
+<div class="form-group">
+<label>Brilho (0-100%): <span id="tft_backlight_value">100</span>%</label>
+<input type="range" id="tft_backlight" name="tft_backlight" min="0" max="100" value="100">
+<small>Define o brilho da luz de fundo para todas as telas</small>
+</div>
+<div class="form-group">
+<label>Redução de brilho à noite (0-100%): <span id="tft_night_dimming_value">0</span>%</label>
+<input type="range" id="tft_night_dimming" name="tft_night_dimming" min="0" max="100" value="0">
+<small>À noite, o brilho será reduzido nesta porcentagem, com base nas informações de dia/noite do OpenWeatherMap</small>
+</div>
+</div>
+<div class="config-section">
+<h3>🌐 Idioma do TFT</h3>
+<div class="form-group">
+<label>Idioma da interface do TFT:</label>
+<select id="tft_lang" name="tft_lang">
+<option value="pl">Polonês</option>
+<option value="en">Inglês</option>
+<option value="pt">Português (Brasil)</option>
+</select>
+<small>Altera os textos exibidos na tela do TFT (requer reinício)</small>
+</div>
+</div>
+<div class="config-section">
+<h3>🎨 Estilo do TFT</h3>
+<div class="form-group">
+<label>Estilo de cores do TFT:</label>
+<select id="tft_style" name="tft_style">
+<option value="dark">Escuro</option>
+<option value="light">Claro (fundo branco)</option>
+</select>
+<small>Modo claro: fundo branco e texto preto nas telas de tabela do TFT</small>
+</div>
+</div>
+<div class="config-section">
+<h3>📋 Tamanho da tabela</h3>
+<div class="form-group">
+<label>Selecione o tamanho da tabela:</label>
+<select id="table_size" name="table_size">
+<option value="normal">Normal</option>
+<option value="medium">Média</option>
+<option value="enlarged">Ampliada</option>
+</select>
+</div>
+</div>
+<div class="config-section">
+<h3>🖥️ Telas do TFT (ordem)</h3>
+<small>A página 1 é exibida primeiro ao ligar. Você pode definir as páginas 1-11 ou desativá-las (OFF).</small>
+<div class="form-group">
+<label style="display: flex; align-items: center; gap: 10px;">
+<input type="checkbox" id="tft_auto_switch" name="tft_auto_switch" style="width: auto;">
+<span>TROCA AUTOMÁTICA</span>
+</label>
+<small>Troca automaticamente a tela do TFT um passo para a direita.</small>
+</div>
+<div class="form-group">
+<label>TEMPO DE TROCA (segundos):</label>
+<input type="number" id="tft_switch_time_sec" name="tft_switch_time_sec" min="1" max="3600" step="1" value="30">
+<small>Intervalo entre as trocas automáticas de tela (1-3600 s).</small>
+</div>
+<div class="form-group">
+<label>Página 1:</label>
+<select id="screen_slot_1">
+<option value="hamclock">HAM CLOCK</option>
+<option value="dxcluster">DX CLUSTER</option>
+<option value="aprsis">APRS-IS</option>
+<option value="aprsradar">APRS RADAR</option>
+<option value="bandinfo">BAND INFO</option>
+<option value="sunspots">SUN SPOTS</option>
+<option value="weather">CLIMA</option>
+<option value="weatherforecast">PREVISÃO DO TEMPO</option>
+<option value="pota">POTA</option>
+<option value="hamalert">HAMALERT</option>
+<option value="matrix">MATRIX</option>
+<option value="lokalizacja">LOCALIZAÇÃO</option>
+<option value="off">OFF</option>
+</select>
+</div>
+<div class="form-group">
+<label>Página 2:</label>
+<select id="screen_slot_2">
+<option value="hamclock">HAM CLOCK</option>
+<option value="dxcluster">DX CLUSTER</option>
+<option value="aprsis">APRS-IS</option>
+<option value="aprsradar">APRS RADAR</option>
+<option value="bandinfo">BAND INFO</option>
+<option value="sunspots">SUN SPOTS</option>
+<option value="weather">CLIMA</option>
+<option value="weatherforecast">PREVISÃO DO TEMPO</option>
+<option value="pota">POTA</option>
+<option value="hamalert">HAMALERT</option>
+<option value="matrix">MATRIX</option>
+<option value="lokalizacja">LOCALIZAÇÃO</option>
+<option value="off">OFF</option>
+</select>
+</div>
+<div class="form-group">
+<label>Página 3:</label>
+<select id="screen_slot_3">
+<option value="hamclock">HAM CLOCK</option>
+<option value="dxcluster">DX CLUSTER</option>
+<option value="aprsis">APRS-IS</option>
+<option value="aprsradar">APRS RADAR</option>
+<option value="bandinfo">BAND INFO</option>
+<option value="sunspots">SUN SPOTS</option>
+<option value="weather">CLIMA</option>
+<option value="weatherforecast">PREVISÃO DO TEMPO</option>
+<option value="pota">POTA</option>
+<option value="hamalert">HAMALERT</option>
+<option value="matrix">MATRIX</option>
+<option value="lokalizacja">LOCALIZAÇÃO</option>
+<option value="off">OFF</option>
+</select>
+</div>
+<div class="form-group">
+<label>Página 4:</label>
+<select id="screen_slot_4">
+<option value="hamclock">HAM CLOCK</option>
+<option value="dxcluster">DX CLUSTER</option>
+<option value="aprsis">APRS-IS</option>
+<option value="aprsradar">APRS RADAR</option>
+<option value="bandinfo">BAND INFO</option>
+<option value="sunspots">SUN SPOTS</option>
+<option value="weather">CLIMA</option>
+<option value="weatherforecast">PREVISÃO DO TEMPO</option>
+<option value="pota">POTA</option>
+<option value="hamalert">HAMALERT</option>
+<option value="matrix">MATRIX</option>
+<option value="lokalizacja">LOCALIZAÇÃO</option>
+<option value="off">OFF</option>
+</select>
+</div>
+<div class="form-group">
+<label>Página 5:</label>
+<select id="screen_slot_5">
+<option value="hamclock">HAM CLOCK</option>
+<option value="dxcluster">DX CLUSTER</option>
+<option value="aprsis">APRS-IS</option>
+<option value="aprsradar">APRS RADAR</option>
+<option value="bandinfo">BAND INFO</option>
+<option value="sunspots">SUN SPOTS</option>
+<option value="weather">CLIMA</option>
+<option value="weatherforecast">PREVISÃO DO TEMPO</option>
+<option value="pota">POTA</option>
+<option value="hamalert">HAMALERT</option>
+<option value="matrix">MATRIX</option>
+<option value="lokalizacja">LOCALIZAÇÃO</option>
+<option value="off">OFF</option>
+</select>
+</div>
+<div class="form-group">
+<label>Página 6:</label>
+<select id="screen_slot_6">
+<option value="hamclock">HAM CLOCK</option>
+<option value="dxcluster">DX CLUSTER</option>
+<option value="aprsis">APRS-IS</option>
+<option value="aprsradar">APRS RADAR</option>
+<option value="bandinfo">BAND INFO</option>
+<option value="sunspots">SUN SPOTS</option>
+<option value="weather">CLIMA</option>
+<option value="weatherforecast">PREVISÃO DO TEMPO</option>
+<option value="pota">POTA</option>
+<option value="hamalert">HAMALERT</option>
+<option value="matrix">MATRIX</option>
+<option value="lokalizacja">LOCALIZAÇÃO</option>
+<option value="off">OFF</option>
+</select>
+</div>
+<div class="form-group">
+<label>Página 7:</label>
+<select id="screen_slot_7">
+<option value="hamclock">HAM CLOCK</option>
+<option value="dxcluster">DX CLUSTER</option>
+<option value="aprsis">APRS-IS</option>
+<option value="aprsradar">APRS RADAR</option>
+<option value="bandinfo">BAND INFO</option>
+<option value="sunspots">SUN SPOTS</option>
+<option value="weather">CLIMA</option>
+<option value="weatherforecast">PREVISÃO DO TEMPO</option>
+<option value="pota">POTA</option>
+<option value="hamalert">HAMALERT</option>
+<option value="matrix">MATRIX</option>
+<option value="lokalizacja">LOCALIZAÇÃO</option>
+<option value="off">OFF</option>
+</select>
+</div>
+<div class="form-group">
+<label>Página 8:</label>
+<select id="screen_slot_8">
+<option value="hamclock">HAM CLOCK</option>
+<option value="dxcluster">DX CLUSTER</option>
+<option value="aprsis">APRS-IS</option>
+<option value="aprsradar">APRS RADAR</option>
+<option value="bandinfo">BAND INFO</option>
+<option value="sunspots">SUN SPOTS</option>
+<option value="weather">CLIMA</option>
+<option value="weatherforecast">PREVISÃO DO TEMPO</option>
+<option value="pota">POTA</option>
+<option value="hamalert">HAMALERT</option>
+<option value="matrix">MATRIX</option>
+<option value="lokalizacja">LOCALIZAÇÃO</option>
+<option value="off">OFF</option>
+</select>
+</div>
+<div class="form-group">
+<label>Página 9:</label>
+<select id="screen_slot_9">
+<option value="hamclock">HAM CLOCK</option>
+<option value="dxcluster">DX CLUSTER</option>
+<option value="aprsis">APRS-IS</option>
+<option value="aprsradar">APRS RADAR</option>
+<option value="bandinfo">BAND INFO</option>
+<option value="sunspots">SUN SPOTS</option>
+<option value="weather">CLIMA</option>
+<option value="weatherforecast">PREVISÃO DO TEMPO</option>
+<option value="pota">POTA</option>
+<option value="hamalert">HAMALERT</option>
+<option value="matrix">MATRIX</option>
+<option value="lokalizacja">LOCALIZAÇÃO</option>
+<option value="off">OFF</option>
+</select>
+</div>
+<div class="form-group">
+<label>Página 10:</label>
+<select id="screen_slot_10">
+<option value="hamclock">HAM CLOCK</option>
+<option value="dxcluster">DX CLUSTER</option>
+<option value="aprsis">APRS-IS</option>
+<option value="aprsradar">APRS RADAR</option>
+<option value="bandinfo">BAND INFO</option>
+<option value="sunspots">SUN SPOTS</option>
+<option value="weather">CLIMA</option>
+<option value="weatherforecast">PREVISÃO DO TEMPO</option>
+<option value="pota">POTA</option>
+<option value="hamalert">HAMALERT</option>
+<option value="matrix">MATRIX</option>
+<option value="lokalizacja">LOCALIZAÇÃO</option>
+<option value="off">OFF</option>
+</select>
+</div>
+<div class="form-group">
+<label>Página 11:</label>
+<select id="screen_slot_11">
+<option value="hamclock">HAM CLOCK</option>
+<option value="dxcluster">DX CLUSTER</option>
+<option value="aprsis">APRS-IS</option>
+<option value="aprsradar">APRS RADAR</option>
+<option value="bandinfo">BAND INFO</option>
+<option value="sunspots">SUN SPOTS</option>
+<option value="weather">CLIMA</option>
+<option value="weatherforecast">PREVISÃO DO TEMPO</option>
+<option value="pota">POTA</option>
+<option value="hamalert">HAMALERT</option>
+<option value="matrix">MATRIX</option>
+<option value="lokalizacja">LOCALIZAÇÃO</option>
+<option value="off">OFF</option>
+</select>
+</div>
+<div class="form-group">
+<label>Página 12:</label>
+<select id="screen_slot_12">
+<option value="hamclock">HAM CLOCK</option>
+<option value="dxcluster">DX CLUSTER</option>
+<option value="aprsis">APRS-IS</option>
+<option value="aprsradar">APRS RADAR</option>
+<option value="bandinfo">BAND INFO</option>
+<option value="sunspots">SUN SPOTS</option>
+<option value="weather">CLIMA</option>
+<option value="weatherforecast">PREVISÃO DO TEMPO</option>
+<option value="lokalizacja">LOCALIZAÇÃO</option>
+<option value="pota">POTA</option>
+<option value="hamalert">HAMALERT</option>
+<option value="matrix">MATRIX</option>
+<option value="off">OFF</option>
+</select>
+</div>
+</div>
+<div class="config-section">
+<h3>🎯 Calibração do TFT</h3>
+<div class="form-group">
+<label>Rotação do TFT (0-3):</label>
+<select id="tft_rotation" name="tft_rotation">
+<option value="0">0 - Retrato</option>
+<option value="1">1 - Paisagem 90° (direita)</option>
+<option value="2">2 - Retrato 180° (invertido)</option>
+<option value="3">3 - Paisagem 270° (esquerda)</option>
+</select>
+<small>Rotação do TFT_eSPI (padrão: 1, requer reinício)</small>
+</div>
+<div class="form-group">
+<label>Inversão de cores do TFT:</label>
+<select id="tft_invert" name="tft_invert">
+<option value="0">Normal</option>
+<option value="1">Invertido</option>
+</select>
+<small>Controla tft.invertDisplay() (o padrão segue o User_Setup.h)</small>
+</div>
+<div class="form-group">
+<label>Rotação do touch (0-3):</label>
+<select id="touch_rotation" name="touch_rotation">
+<option value="0">0 - Retrato</option>
+<option value="1">1 - Paisagem 90° (direita)</option>
+<option value="2">2 - Retrato 180° (invertido)</option>
+<option value="3">3 - Paisagem 270° (esquerda)</option>
+</select>
+<small>Rotação do XPT2046_Touchscreen (padrão: 1)</small>
+</div>
+<div class="form-group">
+<label>Troca manual de eixos:</label>
+<select id="touch_swap_mode" name="touch_swap_mode">
+<option value="none">Nenhuma (NONE)</option>
+<option value="xy">Trocar X↔Y (SWAP XY)</option>
+<option value="x">Inverter X (INVERT X)</option>
+<option value="y">Inverter Y (INVERT Y)</option>
+<option value="both">Inverter X e Y (INVERT BOTH - 180°)</option>
+<option value="rot90cw">Girar 90° à direita (SWAP XY + INVERT X)</option>
+<option value="rot90ccw">Girar 90° à esquerda (SWAP XY + INVERT Y)</option>
+<option value="xy_both">Trocar + inverter ambos (SWAP XY + INVERT BOTH)</option>
+</select>
+<small>Orientação manual do touch (ou use a chave de calibração em CALL_TFT)</small>
+</div>
+<div class="form-group">
+<button type="button" class="btn" onclick="resetTftRotation()" style="background: #d44; border-color: #a22; color: #fff;">🔄 Restaurar rotação do TFT (PADRÃO)</button>
+<small>Define a rotação do TFT como 1 e reinicia o dispositivo</small>
+</div>
+<div class="form-group">
+<button type="button" class="btn" onclick="resetTouchCalibration()" style="background: #d44; border-color: #a22; color: #fff;">🔄 Restaurar calibração do touch (PADRÃO)</button>
+<small>Restaura a calibração padrão do touch definida no firmware</small>
+</div>
+</div>
+<button type="button" class="save-btn" onclick="saveConfig()">💾 Salvar configurações do TFT</button>
+</div>
+</div>
+<div id="alert-page" class="page">
+<div class="config-form" style="margin-bottom: 24px;">
+<h2 style="color: #e0e0e0; margin-bottom: 20px; text-align: center;">ALERTA APRS</h2>
+<div class="config-section">
+<h3>🚨 ALERTA APRS</h3>
+<div class="form-group">
+<label>Lista de indicativos monitorados (separados por vírgula):</label>
+<input type="text" id="aprs_alert" name="aprs_alert" placeholder="SQ3NIK-9, SP3YOR, SP3KON-7">
+<small>Campo CSV único. Máximo de 20 entradas. Exemplo: SQ3NIK-9, SP3YOR, SP3KON* (* no final = qualquer SSID)</small>
+</div>
+<div class="form-group">
+<label style="display: flex; align-items: center; gap: 10px;">
+<input type="checkbox" id="aprs_alert_enabled" name="aprs_alert_enabled" style="width: auto;" checked>
+<span>Ativar notificações do ALERTA APRS</span>
+</label>
+<small>Quando desativado, a lista continua salva, mas os alertas não são informados.</small>
+</div>
+<div class="form-group">
+<label>Intervalo mínimo entre alertas da mesma estação (segundos):</label>
+<input type="number" id="aprs_alert_min_sec" name="aprs_alert_min_sec" value="300" min="0" max="86400" step="1">
+<small>0 = alerta a cada recepção. Faixa: 0-86400 segundos.</small>
+</div>
+<div class="form-group">
+<label>Tempo de exibição do ALERTA APRS no TFT (segundos):</label>
+<input type="number" id="aprs_alert_screen_sec" name="aprs_alert_screen_sec" value="5" min="1" max="60" step="1">
+<small>Faixa: 1-60 segundos. Padrão: 5 segundos.</small>
+</div>
+<div class="form-group">
+<label style="display: flex; align-items: center; gap: 10px;">
+<input type="checkbox" id="aprs_alert_nearby_enabled" name="aprs_alert_nearby_enabled" style="width: auto;" checked>
+<span>Ativar detecção de estações móveis próximas (-7 e -9)</span>
+</label>
+<small>Vale apenas para estações APRS com SSID -7 ou -9 (ex.: SP3KON-9, SQ3NIK-7).</small>
+</div>
+<div class="form-group">
+<label style="display: flex; align-items: center; gap: 10px;">
+<input type="checkbox" id="aprs_alert_wx_enabled" name="aprs_alert_wx_enabled" style="width: auto;">
+<span>Ativar notificações de estações meteorológicas APRS (WX)</span>
+</label>
+<small>Quando ativado, o ALERTA APRS também detecta estações com o símbolo WX e mostra um alerta com os dados meteorológicos decodificados.</small>
+</div>
+<div class="form-group">
+<label>Distância de alerta para estações móveis (km):</label>
+<input type="number" id="aprs_alert_distance_km" name="aprs_alert_distance_km" value="1" min="0.1" max="500" step="0.1">
+<small>O alerta dispara para estações móveis a esta distância ou menos.</small>
+</div>
+<div class="form-group">
+<label style="display: flex; align-items: center; gap: 10px;">
+<input type="checkbox" id="enable_led_alert" name="enable_led_alert" style="width: auto;" checked>
+<span>Ativar alerta óptico por LED (LED azul - GPIO17)</span>
+</label>
+<small>Liga ou desliga o LED piscante do ALERTA APRS. Dá para soldar um buzzer de 3V.</small>
+</div>
+<div class="form-group">
+<label>Duração do alerta por LED (ms):</label>
+<input type="number" id="led_alert_duration_ms" name="led_alert_duration_ms" value="5000" min="100" max="60000" step="100">
+<small>Faixa: 100-60000 ms. Padrão: 5000 ms.</small>
+</div>
+<div class="form-group">
+<label>Ritmo de piscada do LED (ms):</label>
+<input type="number" id="led_alert_blink_ms" name="led_alert_blink_ms" value="500" min="50" max="5000" step="10">
+<small>Faixa: 50-5000 ms. Padrão: 500 ms.</small>
+</div>
+</div>
+<button type="button" class="save-btn" onclick="saveConfig()">💾 Salvar ALERTA APRS</button>
+</div>
+<div class="config-form">
+<h2 style="color: #e0e0e0; margin-bottom: 20px; text-align: center;">ALERTA DE CLIMA</h2>
+<div class="config-section">
+<h3>⚡ ALERTA DE CLIMA</h3>
+<div class="form-group">
+<label style="display: flex; align-items: center; gap: 10px;">
+<input type="checkbox" id="weather_alert_storm_enabled" name="weather_alert_storm_enabled" style="width: auto;">
+<span>Ativar alerta de possível tempestade</span>
+</label>
+<small>Mostra um alerta quando a previsão das próximas 6 horas indicar possível tempestade.</small>
+</div>
+<div class="form-group">
+<label style="display: flex; align-items: center; gap: 10px;">
+<input type="checkbox" id="weather_alert_wind_enabled" name="weather_alert_wind_enabled" style="width: auto;">
+<span>Ativar alerta de vento forte</span>
+</label>
+<small>Mostra um alerta quando a previsão das próximas 6 horas indicar vento forte.</small>
+</div>
+<div class="form-group">
+<label>Limite do alerta de vento (m/s):</label>
+<input type="number" id="weather_alert_wind_threshold_ms" name="weather_alert_wind_threshold_ms" min="1" max="60" step="0.1" value="12.0">
+<small>Define o limite de velocidade do vento para os alertas (faixa 1,0-60,0 m/s).</small>
+</div>
+</div>
+<button type="button" class="save-btn" onclick="saveConfig()">💾 Salvar ALERTA DE CLIMA</button>
+</div>
+</div>
+<div id="config-page" class="page">
+<div class="config-form">
+<h2 style="color: #e0e0e0; margin-bottom: 20px; text-align: center;">Configuração do ESP32-HAM-CLOCK</h2>
+<form id="config-form" autocomplete="off" data-lpignore="true" data-1p-ignore="true">
+<div class="config-section">
+<h3>📶 Conexão WiFi</h3>
+<div class="form-group">
+<label>SSID do WiFi:</label>
+<input type="text" id="wifi_ssid" name="wifi_ssid" required>
+<small>Nome da rede WiFi à qual o dispositivo deve se conectar</small>
+</div>
+<div class="form-group">
+<label>Senha do WiFi:</label>
+<input type="password" id="wifi_pass" name="wifi_pass" autocomplete="new-password" data-lpignore="true" data-1p-ignore="true" spellcheck="false">
+<small>Senha do WiFi (deixe vazio para redes abertas)</small>
+</div>
+<div class="form-group">
+<label>SSID do WiFi (reserva):</label>
+<input type="text" id="wifi_ssid2" name="wifi_ssid2" placeholder="opcional">
+<small>SSID secundário usado quando o principal não estiver disponível</small>
+</div>
+<div class="form-group">
+<label>Senha do WiFi (reserva):</label>
+<input type="password" id="wifi_pass2" name="wifi_pass2" placeholder="opcional" autocomplete="new-password" data-lpignore="true" data-1p-ignore="true" spellcheck="false">
+<small>Senha da rede reserva (deixe vazio para rede aberta)</small>
+</div>
+</div>
+<div class="config-section" id="uart-settings-section">
+<h3>🔌 Porta serial UART</h3>
+<div class="form-group">
+<label>Taxa de baud:</label>
+<input type="number" id="uart2_baud" name="uart2_baud" min="300" max="2000000" step="1" value="9600">
+<small>O padrão é 9600. Use a mesma taxa nos dois lados.</small>
+</div>
+<div class="form-group">
+<label>Bits de dados:</label>
+<select id="uart2_data_bits" name="uart2_data_bits">
+<option value="8">8</option>
+<option value="7">7</option>
+</select>
+<small>O valor típico é 8 para módulos GPS e HC-05.</small>
+</div>
+<div class="form-group">
+<label>Paridade:</label>
+<select id="uart2_parity" name="uart2_parity">
+<option value="none">Nenhuma</option>
+<option value="even">Par</option>
+<option value="odd">Ímpar</option>
+</select>
+</div>
+<div class="form-group">
+<label>Bits de parada:</label>
+<select id="uart2_stop_bits" name="uart2_stop_bits">
+<option value="1">1</option>
+<option value="2">2</option>
+</select>
+</div>
+<div class="form-group">
+<small>Pinos da UART2: RX = IO27, TX = IO22 (ESP32).</small>
+</div>
+<div class="form-group">
+<small id="uart2_status_gps" style="color: #ffffff; font-weight: 600;">GPS: Inativo FIX: Não</small><br>
+<small id="uart2_status_bt" style="color: #ffffff; font-weight: 600;">Módulo BT: Inativo</small>
+</div>
+</div>
+<div class="config-section">
+<h3>📻 DX Cluster</h3>
+<div class="form-group">
+<label>Host do DX Cluster:</label>
+<input type="text" id="cluster_host" name="cluster_host" required>
+<small>Endereço do servidor DX Cluster (ex.: dxc.metronet.pl ou dxspots.com)</small>
+</div>
+<div class="form-group">
+<label>Porta do DX Cluster:</label>
+<input type="number" id="cluster_port" name="cluster_port" required>
+<small>Porta do servidor DX Cluster (normalmente 23 para Telnet)</small>
+</div>
+<div class="form-group">
+<label style="display: flex; align-items: center; gap: 10px;">
+<input type="checkbox" id="cluster_noann" name="cluster_noann" style="width: auto;">
+<span>Desativar anúncios (set/noann)</span>
+</label>
+<small>Oculta os anúncios administrativos do cluster</small>
+</div>
+<div class="form-group">
+<label style="display: flex; align-items: center; gap: 10px;">
+<input type="checkbox" id="cluster_nowwv" name="cluster_nowwv" style="width: auto;">
+<span>Desativar WWV (set/nowwv)</span>
+</label>
+<small>Oculta os boletins WWV (relógios atômicos)</small>
+</div>
+<div class="form-group">
+<label style="display: flex; align-items: center; gap: 10px;">
+<input type="checkbox" id="cluster_nowcy" name="cluster_nowcy" style="width: auto;">
+<span>Desativar WCY (set/nowcy)</span>
+</label>
+<small>Oculta os boletins WCY (relógios atômicos)</small>
+</div>
+<div class="form-group">
+<label style="display: flex; align-items: center; gap: 10px;">
+<input type="checkbox" id="cluster_usefilters" name="cluster_usefilters" style="width: auto;">
+<span>Usar filtros (set/filter)</span>
+</label>
+<small>Ativa filtros avançados de spots (requer os comandos abaixo)</small>
+</div>
+<div class="form-group">
+<label>Comandos de filtro (um por linha):</label>
+<textarea id="cluster_filters" name="cluster_filters" rows="4" placeholder="set/filter k,ve/pass&#10;set/filter dxbm/pass hf&#10;set/filter dxbm/reject 6-cw,6-ssb,6-fm" style="font-family: monospace; font-size: 12px;"></textarea>
+<small>Comandos de filtro para o CC-Cluster. Exemplos: set/filter k,ve/pass (somente K e VE), set/filter dxbm/pass hf (somente HF), set/filter dxbm/reject 6-cw,6-ssb,6-fm (rejeitar 6 m)</small>
+</div>
+</div>
+<div class="config-section">
+<h3>🏕️ POTA Cluster</h3>
+<div class="form-group">
+<label>Link da API externa do POTA:</label>
+<input type="text" id="pota_api_url" name="pota_api_url" value="https://api.pota.app/v1/spots">
+<small>Endereço usado pelo backend para buscar os spots do POTA (HTTP JSON)</small>
+</div>
+</div>
+<div class="config-section">
+<h3>🛰️ HAMALERT</h3>
+<div class="form-group">
+<label>Host Telnet:</label>
+<input type="text" id="hamalert_host" name="hamalert_host" value="hamalert.org">
+<small>Opcional. Padrão: hamalert.org</small>
+</div>
+<div class="form-group">
+<label>Porta Telnet:</label>
+<input type="number" id="hamalert_port" name="hamalert_port" value="7300" min="1" max="65535">
+<small>Opcional. Padrão: 7300</small>
+</div>
+<div class="form-group">
+<label>Login:</label>
+<input type="text" id="hamalert_login" name="hamalert_login">
+<small>Opcional. Login da conta HamAlert para autenticação Telnet</small>
+</div>
+<div class="form-group">
+<label>Senha Telnet:</label>
+<input type="password" id="hamalert_password" name="hamalert_password" autocomplete="new-password" data-lpignore="true" data-1p-ignore="true" spellcheck="false">
+<small>Opcional. O HAMALERT fica desativado se login/senha estiverem vazios</small>
+</div>
+</div>
+<div class="config-section">
+<h3>📡 Sua estação</h3>
+<div class="form-group">
+<label>Seu indicativo:</label>
+<input type="text" id="user_callsign" name="user_callsign" placeholder="ex.: PP5RD">
+<small>Seu indicativo, usado para entrar no DX Cluster</small>
+</div>
+<div class="form-group">
+<label>Seu locator (Maidenhead):</label>
+<input type="text" id="user_locator" name="user_locator" placeholder="ex.: GG66">
+<small>Locator Maidenhead (4-6 caracteres) usado para calcular as distâncias dos spots</small>
+</div>
+<div class="form-group">
+<label>Fuso horário (deslocamento em horas do UTC):</label>
+<input type="number" id="timezone" name="timezone" min="-12" max="14" step="0.5" value="0">
+<small>Deslocamento em horas em relação ao UTC (ex.: Brasília: -3)</small>
+</div>
+<div class="form-group">
+<label>Latitude:</label>
+<input type="number" step="0.000001" id="user_lat" name="user_lat" placeholder="ex.: -23.5505">
+<small>Latitude em formato decimal (como no Google Maps). Exemplo: -23.5505 para São Paulo</small>
+</div>
+<div class="form-group">
+<label>Longitude:</label>
+<input type="number" step="0.000001" id="user_lon" name="user_lon" placeholder="ex.: -46.6333">
+<small>Longitude em formato decimal (como no Google Maps). Exemplo: -46.6333 para São Paulo</small>
+</div>
+<div class="form-group">
+<label style="display: flex; align-items: center; gap: 10px;">
+<input type="checkbox" id="use_gps_if_active" name="use_gps_if_active" style="width: auto;">
+<span>Usar a posição do GPS quando ativo</span>
+</label>
+<small>Quando ativado e o GPS tiver FIX, todos os serviços usam as coordenadas do módulo GPS em vez das coordenadas manuais da estação.</small>
+</div>
+</div>
+<div class="config-section">
+<h3>🔍 QRZ.com</h3>
+<div class="form-group">
+<label>Usuário do QRZ.com </label>
+<input type="text" id="qrz_user" name="qrz_user" placeholder="login do QRZ">
+<small>Usuário da API do QRZ.com (opcional, para informações extras do indicativo)</small>
+</div>
+<div class="form-group">
+<label>Senha do QRZ.com (API XML):</label>
+<input type="password" id="qrz_pass" name="qrz_pass" placeholder="senha do QRZ" autocomplete="new-password" data-lpignore="true" data-1p-ignore="true" spellcheck="false">
+<small>Senha da API do QRZ.com (opcional)</small>
+</div>
+<div class="form-group">
+<label>Status do QRZ:</label>
+<input type="text" id="qrz_status" name="qrz_status" readonly style="background: #1a1a1a; color: #888;">
+<small>Status da conexão com o QRZ.com (atualizado automaticamente)</small>
+</div>
+</div>
+<div class="config-section">
+<h3>🌤️ OpenWeather</h3>
+<div class="form-group">
+<label>Chave da API do OpenWeather:</label>
+<input type="password" id="weather_key" name="weather_key" placeholder="chave da API" autocomplete="new-password" data-lpignore="true" data-1p-ignore="true" spellcheck="false">
+<small>Chave da API do openweathermap.org (necessária para mostrar clima e previsão nas telas do TFT)</small>
+</div>
+</div>
+<div class="config-section">
+<h3>📡 KiwiSDR</h3>
+<div class="form-group">
+<label>URL do KiwiSDR:</label>
+<input type="text" id="openwebrx_url" name="openwebrx_url" placeholder="">
+<small>Informe o endereço do KiwiSDR pelo qual deseja ouvir as estações, ex.: http://okno.ddns.net:8073/</small>
+<small><a href="http://kiwisdr.com/.public/" target="_blank" rel="noopener noreferrer" style="color: #6a6a4a;">Lista de KiwiSDR disponíveis: http://kiwisdr.com/.public/</a></small>
+</div>
+</div>
+<div class="config-section">
+<h3>📻 APRS-IS</h3>
+<div class="form-group">
+<label>Host do APRS-IS:</label>
+<input type="text" id="aprs_host" name="aprs_host" placeholder="rotate.aprs2.net">
+<small>Endereço do servidor APRS-IS (ex.: rotate.aprs2.net)</small>
+</div>
+<div class="form-group">
+<label>Porta do APRS-IS:</label>
+<input type="number" id="aprs_port" name="aprs_port" placeholder="14580" min="1" max="65535">
+<small>Porta do servidor APRS-IS (padrão 14580)</small>
+</div>
+<div class="form-group">
+<label>Indicativo APRS:</label>
+<input type="text" id="aprs_callsign" name="aprs_callsign" placeholder="sp3kon">
+<small>Seu indicativo, usado para entrar no APRS-IS</small>
+</div>
+<div class="form-group">
+<label>SSID do APRS (0-15):</label>
+<select id="aprs_ssid" name="aprs_ssid">
+<option value="0">0</option>
+<option value="1">1</option>
+<option value="2">2</option>
+<option value="3">3</option>
+<option value="4">4</option>
+<option value="5">5</option>
+<option value="6">6</option>
+<option value="7">7</option>
+<option value="8">8</option>
+<option value="9">9</option>
+<option value="10">10</option>
+<option value="11">11</option>
+<option value="12">12</option>
+<option value="13">13</option>
+<option value="14">14</option>
+<option value="15">15</option>
+</select>
+<small>SSID acrescentado ao indicativo na transmissão do beacon APRS. 0 = sem sufixo.</small>
+</div>
+<div class="form-group">
+<label>Passcode do APRS:</label>
+<input type="number" id="aprs_passcode" name="aprs_passcode" placeholder="23735" min="0" max="99999">
+<small>Passcode do APRS-IS (gere em aprs.org)</small>
+</div>
+<div class="form-group">
+<label>Raio do filtro (km):</label>
+<input type="number" id="aprs_radius" name="aprs_radius" placeholder="50" min="0" max="50">
+<small>Raio do filtro de estações APRS em quilômetros (0-50 km). O filtro e todos os cálculos de distância usam as coordenadas da seção "Sua estação" (formato xx.xxxxxx)</small>
+</div>
+<div class="form-group">
+<label class="checkbox-label">
+<input type="checkbox" id="aprs_beacon" name="aprs_beacon">
+Enviar beacon para APRS-IS/TNC-KISS
+</label>
+<small>Envia sua posição periodicamente (TCPIP*). Requer coordenadas configuradas.</small>
+</div>
+<div class="form-group">
+<label>Símbolo APRS (2 caracteres):</label>
+<input type="text" id="aprs_symbol" name="aprs_symbol" maxlength="2" placeholder="/-">
+<small>O primeiro caractere é a tabela (ex.: / ou \), o segundo é o símbolo (ex.: -). Usado no beacon.</small>
+</div>
+<div class="form-group">
+<label>Comentário APRS:</label>
+<input type="text" id="aprs_comment" name="aprs_comment" maxlength="43" placeholder="Meu comentário">
+<small>Máximo de 43 caracteres ASCII. Usado em todo beacon; o primeiro e a cada cinco beacons usa o link do projeto ESP32-HAM-CLOCK.</small>
+</div>
+<div class="form-group">
+<label>Intervalo do beacon (minutos):</label>
+<input type="number" id="aprs_interval_min" name="aprs_interval_min" min="1" max="180" placeholder="29">
+<small>Intervalo entre beacons consecutivos após o primeiro (enviado em 1 minuto). Faixa 1-180 min.</small>
+</div>
+</div>
+<button type="submit" class="save-btn">💾 Salvar configuração</button>
+<div class="config-section" style="margin-top: 20px;">
+<h3>📁 Backup das configurações</h3>
+<div class="form-group">
+<button type="button" class="btn" onclick="exportSettingsToFile()" style="width: 100%; padding: 12px;">Salvar configurações em arquivo TXT</button>
+<small>Cria um backup das configurações atuais do formulário e o salva no seu computador.</small>
+</div>
+<div class="form-group">
+<input type="file" id="settings_file_input" accept=".txt,application/json,text/plain" style="display: none;">
+<button type="button" class="btn" onclick="openSettingsFilePicker()" style="width: 100%; padding: 12px;">Carregar configurações de arquivo TXT</button>
+<small>Carrega as configurações de um arquivo de backup. Após importar, você pode salvá-las no dispositivo imediatamente.</small>
+</div>
+</div>
+</form>
+</div>
+</div>
+<div id="pota-page" class="page">
+<div class="cyd-container dx-mobile-shell">
+<h2 class="dx-panel-title">POTA</h2>
+<div class="cyd-screen">
+<div class="controls">
+<div class="control-group">
+<span class="dx-control-label">Modo:</span>
+<button class="btn active" onclick="setPotaMode('All', this)" id="pota_mode_all">ALL</button>
+<button class="btn" onclick="setPotaMode('SSB', this)" id="pota_mode_ssb">SSB</button>
+<button class="btn" onclick="setPotaMode('CW', this)" id="pota_mode_cw">CW</button>
+<button class="btn" onclick="setPotaMode('FT8FT4', this)" id="pota_mode_ft8">FT8/FT4</button>
+</div>
+<div class="control-group">
+<span class="dx-control-label">Banda:</span>
+<div class="dx-band-grid pota-band-grid">
+<button class="btn active" onclick="setPotaBand('All', this)" id="pota_band_all">ALL</button>
+<button class="btn" onclick="setPotaBand('160m', this)">160m</button>
+<button class="btn" onclick="setPotaBand('80m', this)">80m</button>
+<button class="btn" onclick="setPotaBand('40m', this)">40m</button>
+<button class="btn" onclick="setPotaBand('20m', this)">20m</button>
+<button class="btn" onclick="setPotaBand('15m', this)">15m</button>
+<button class="btn" onclick="setPotaBand('10m', this)">10m</button>
+<span class="dx-band-spacer" aria-hidden="true"></span>
+<span class="dx-band-spacer" aria-hidden="true"></span>
+<span class="dx-band-spacer" aria-hidden="true"></span>
+</div>
+</div>
+</div>
+<table id="pota-table">
+<thead>
+<tr>
+<th>UTC</th>
+<th>INDICATIVO</th>
+<th>MHz</th>
+<th>MODE</th>
+<th>PAÍS</th>
+</tr>
+</thead>
+<tbody id="pota-tbody"></tbody>
+</table>
+<div class="status" id="pota-status">Aguardando dados do POTA...</div>
+<div class="pota-debug-box">
+<b>Dados brutos da API do POTA:</b>
+<pre id="pota-raw-json" class="pota-raw-json"></pre>
+</div>
+</div>
+</div>
+</div>
+<div id="hamalert-page" class="page">
+<div class="cyd-container dx-mobile-shell">
+<h2 class="dx-panel-title">HAMALERT</h2>
+<div class="cyd-screen">
+<div class="controls">
+<div class="control-group">
+<span class="dx-control-label">Modo:</span>
+<button class="btn active" onclick="setHamalertMode('All', this)" id="hama_mode_all">ALL</button>
+<button class="btn" onclick="setHamalertMode('SSB', this)" id="hama_mode_ssb">SSB</button>
+<button class="btn" onclick="setHamalertMode('CW', this)" id="hama_mode_cw">CW</button>
+<button class="btn" onclick="setHamalertMode('FT8FT4', this)" id="hama_mode_ft8">FT8/FT4</button>
+</div>
+<div class="control-group hamalert-band-group">
+<span class="dx-control-label">Banda:</span>
+<div class="dx-band-grid hamalert-band-grid">
+<button class="btn active" onclick="setHamalertBand('All', this)" id="hama_band_all">ALL</button>
+<button class="btn" onclick="setHamalertBand('160m', this)">160m</button>
+<button class="btn" onclick="setHamalertBand('80m', this)">80m</button>
+<button class="btn" onclick="setHamalertBand('60m', this)">60m</button>
+<button class="btn" onclick="setHamalertBand('40m', this)">40m</button>
+<button class="btn" onclick="setHamalertBand('30m', this)">30m</button>
+<button class="btn" onclick="setHamalertBand('20m', this)">20m</button>
+<button class="btn" onclick="setHamalertBand('17m', this)">17m</button>
+<button class="btn" onclick="setHamalertBand('15m', this)">15m</button>
+<button class="btn" onclick="setHamalertBand('12m', this)">12m</button>
+<button class="btn" onclick="setHamalertBand('10m', this)">10m</button>
+<button class="btn" onclick="setHamalertBand('VHF', this)">VHF</button>
+<button class="btn" onclick="setHamalertBand('UHF', this)">UHF</button>
+<button class="btn" onclick="setHamalertBand('SHF', this)">SHF</button>
+<span class="dx-band-spacer" aria-hidden="true"></span>
+</div>
+</div>
+</div>
+<table id="hamalert-table">
+<thead>
+<tr>
+<th>UTC</th>
+<th>INDICATIVO</th>
+<th>MHz</th>
+<th>MODE</th>
+<th>PAÍS</th>
+</tr>
+</thead>
+<tbody id="hamalert-tbody"></tbody>
+</table>
+<div class="status" id="hamalert-status">Aguardando dados do HAMALERT...</div>
+</div>
+</div>
+</div>
+<div id="manual-page" class="page">
+<div class="manual-container">
+<div class="manual-content" id="manual-content">Carregando manual...</div>
+</div>
+</div>
+<div id="links-page" class="page">
+<div class="cyd-container dx-mobile-shell propagation-mobile-shell links-mobile-shell">
+<h2 class="dx-panel-title">LINKS</h2>
+<div class="cyd-screen">
+<h3 class="prop-section-title">ESP32-HAM-CLOCK <span class="links-fw-version">v1.3.0 &mdash; 05.07.2026</span></h3>
+<div class="github-release-box">
+<div class="github-release-label">&#128190; Baixar a versão mais recente</div>
+<div id="github-release-info" class="github-release-text">Verificando a versão mais recente...</div>
+<a href="https://github.com/SP3KON/ESP32-HAM-CLOCK" target="_blank" rel="noopener" class="github-link">github.com/SP3KON/ESP32-HAM-CLOCK</a>
+</div>
+<div class="github-release-box github-flasher-box">
+<div class="github-release-label">&#9889; Gravar o firmware pelo navegador</div>
+<a href="https://jason2866.github.io/WebSerial_ESPTool/" target="_blank" rel="noopener" class="github-link">jason2866.github.io/WebSerial_ESPTool</a>
+</div>
+<h3 class="prop-section-title prop-section-title-secondary">Recomendado</h3>
+<table class="prop-metrics-table links-desc-table">
+<tbody>
+<tr><th><a href="https://aprst.pl" target="_blank" rel="noopener">aprst.pl</a></th><td>Serviço APRS polonês &mdash; rastreador e monitor APRS em tempo real, por Artur SQ3A.</td></tr>
+<tr><th><a href="https://www.sp3yor.net" target="_blank" rel="noopener">sp3yor.net</a></th><td>Radioclube SP3YOR de Poznań &mdash; projetos, antenas e atividades de radioamadorismo.</td></tr>
+<tr><th><a href="https://sp3bob.altervista.org" target="_blank" rel="noopener">sp3bob.altervista.org</a></th><td>Site do Marcin SP3BOB &mdash; um site para todo entusiasta de radioamadorismo.</td></tr>
+<tr><th><a href="https://olgierd.github.io/coaxcalculator/" target="_blank" rel="noopener">olgierd.github.io/coaxcalculator</a></th><td>Calculadora de perdas para cabos coaxiais populares &mdash; por Olgierd SQ3SWF.</td></tr>
+</tbody>
+</table>
+<h3 class="prop-section-title prop-section-title-secondary">Recursos úteis</h3>
+<table class="prop-metrics-table">
+<tbody>
+<tr><th>DX Cluster</th><td><a href="https://www.dxcluster.info" target="_blank" rel="noopener">dxcluster.info</a></td></tr>
+<tr><th>DX Heat</th><td><a href="https://dxheat.com" target="_blank" rel="noopener">dxheat.com</a></td></tr>
+<tr><th>APRS.fi</th><td><a href="https://aprs.fi" target="_blank" rel="noopener">aprs.fi</a></td></tr>
+<tr><th>OpenWeatherMap</th><td><a href="https://openweathermap.org" target="_blank" rel="noopener">openweathermap.org</a></td></tr>
+<tr><th>POTA</th><td><a href="https://pota.app" target="_blank" rel="noopener">pota.app</a></td></tr>
+<tr><th>HamAlert</th><td><a href="https://hamalert.org" target="_blank" rel="noopener">hamalert.org</a></td></tr>
+<tr><th>QRZ.com</th><td><a href="https://www.qrz.com" target="_blank" rel="noopener">qrz.com</a></td></tr>
+<tr><th>DXMaps</th><td><a href="https://www.dxmaps.com" target="_blank" rel="noopener">dxmaps.com</a></td></tr>
+<tr><th>PSKReporter</th><td><a href="https://pskreporter.info" target="_blank" rel="noopener">pskreporter.info</a></td></tr>
+<tr><th>Solar Ham</th><td><a href="https://www.solarham.net" target="_blank" rel="noopener">solarham.net</a></td></tr>
+<tr><th>Tropo F5LEN</th><td><a href="https://tropo.f5len.org/" target="_blank" rel="noopener">tropo.f5len.org</a></td></tr>
+<tr><th>ISS Tracker</th><td><a href="https://isstracker.pl/" target="_blank" rel="noopener">isstracker.pl</a></td></tr>
+<tr><th>Me pague um café ☕</th><td><a href="https://buycoffee.to/esp32hamclock" target="_blank" rel="noopener">buycoffee.to/esp32hamclock</a></td></tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<script>
+let currentModes = new Set();
+let currentBands = new Set();
+let allSpots = [];
+let continentFilters = {
+AF: true, AN: true, AS: true, EU: true, NA: true, SA: true, OC: true
+};
+const getSpotContinent = (spotter) => {
+if (!spotter) return null;
+let s = ("" + spotter).toUpperCase().trim();
+s = s.replace(/[^A-Z0-9\/]/g, "");
+if (s.startsWith("KC4") || s.startsWith("VP8") || s.startsWith("CE9")) return "AN";
+if (s.startsWith("VK") || s.startsWith("ZL") || s.startsWith("KH6") || s.startsWith("ZK") || s.startsWith("FO") || s.startsWith("FK") || s.startsWith("DU") || s.startsWith("YJ") || s.startsWith("3D2")) return "OC";
+if (s.startsWith("K") || s.startsWith("N") || s.startsWith("W") || s.startsWith("VE") || s.startsWith("VA") || s.startsWith("VY") || s.startsWith("XE") || s.startsWith("CM") || s.startsWith("CO") || s.startsWith("KP")) return "NA";
+if (s.startsWith("LU") || s.startsWith("LW") || s.startsWith("PY") || s.startsWith("CX") || s.startsWith("CE") || s.startsWith("OA") || s.startsWith("YV") || s.startsWith("HK") || s.startsWith("PJ")) return "SA";
+if (s.startsWith("ZS") || s.startsWith("ZR") || s.startsWith("ZD7") || s.startsWith("ZD8") || s.startsWith("5H") || s.startsWith("5R") || s.startsWith("CN") || s.startsWith("3V") || s.startsWith("SU") || s.startsWith("7Q") || s.startsWith("D4") || s.startsWith("C5") || s.startsWith("A2") || s.startsWith("V5")) return "AF";
+if (s.startsWith("JA") || s.startsWith("JE") || s.startsWith("JF") || s.startsWith("JG") || s.startsWith("JR") || s.startsWith("JH") || s.startsWith("BY") || s.startsWith("BH") || s.startsWith("BA") || s.startsWith("VR") || s.startsWith("VU") || s.startsWith("9M") || s.startsWith("HS") || s.startsWith("HL") || s.startsWith("BV") || s.startsWith("UA9") || s.startsWith("UN") || s.startsWith("EX") || s.startsWith("EY") || s.startsWith("ER") || s.startsWith("4X")) return "AS";
+if (s.startsWith("SP") || s.startsWith("SN") || s.startsWith("SQ") || s.startsWith("HF") || s.startsWith("DL") || s.startsWith("F") || s.startsWith("G") || s.startsWith("GM") || s.startsWith("EI") || s.startsWith("I") || s.startsWith("EA") || s.startsWith("OK") || s.startsWith("OM") || s.startsWith("HA") || s.startsWith("OE") || s.startsWith("PA") || s.startsWith("ON") || s.startsWith("SM") || s.startsWith("OH") || s.startsWith("OZ") || s.startsWith("LA") || s.startsWith("LY") || s.startsWith("YL") || s.startsWith("UA") || s.startsWith("UR") || s.startsWith("YO") || s.startsWith("SV") || s.startsWith("LZ") || s.startsWith("9A") || s.startsWith("S5")) return "EU";
+return null;
+}
+const readContinentFilters = () => {
+continentFilters.AF = !!document.getElementById('cont_af')?.checked;
+continentFilters.AN = !!document.getElementById('cont_an')?.checked;
+continentFilters.AS = !!document.getElementById('cont_as')?.checked;
+continentFilters.EU = !!document.getElementById('cont_eu')?.checked;
+continentFilters.NA = !!document.getElementById('cont_na')?.checked;
+continentFilters.SA = !!document.getElementById('cont_sa')?.checked;
+continentFilters.OC = !!document.getElementById('cont_oc')?.checked;
+}
+let manualLoaded = false;
+const manualUrl = "/manual_pt.txt";
+let linksLoaded = false;
+const loadLinks = () => {
+if (linksLoaded) return;
+fetch('https://api.github.com/repos/SP3KON/ESP32-HAM-CLOCK/releases/latest')
+.then(r => r.ok ? r.json() : Promise.reject())
+.then(data => {
+const version = data.tag_name || '?';
+const dateRaw = data.published_at || '';
+let dateStr = '?';
+if (dateRaw) {
+const d = new Date(dateRaw);
+dateStr = d.toLocaleDateString('en-GB', {day: '2-digit', month: '2-digit', year: 'numeric'});
+}
+document.getElementById('github-release-info').innerHTML =
+`Versão mais recente disponível: <strong>${version}</strong>, lançada em <strong>${dateStr}</strong>`;
+linksLoaded = true;
+})
+.catch(() => {
+document.getElementById('github-release-info').textContent = 'Não foi possível verificar a versão mais recente.';
+});
+};
+const loadManual = () => {
+if (manualLoaded) return;
+fetch(manualUrl)
+.then(response => response.ok ? response.text() : Promise.reject())
+.then(text => {
+document.getElementById('manual-content').textContent = text.trim();
+manualLoaded = true;
+})
+.catch(() => {
+document.getElementById('manual-content').textContent = "Falha ao carregar o manual.";
+});
+};
+const showPage = (page) => {
+document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+document.querySelectorAll('.nav-btn').forEach(b => {
+if (b.getAttribute('onclick') && b.getAttribute('onclick').includes(`showPage('${page}')`)) {
+b.classList.add('active');
+} else {
+b.classList.remove('active');
+}
+});
+const bottomBtn = document.querySelector('.links-bottom-btn');
+if (bottomBtn) bottomBtn.classList.toggle('active', page === 'links');
+document.getElementById(page + '-page').classList.add('active');
+if (page === "config" || page === "tft" || page === "alert") {
+loadConfig();
+} else if (page === "aprs") {
+loadAPRS();
+} else if (page === "propagation") {
+loadPropagation();
+} else if (page === "pota") {
+loadPOTA();
+} else if (page === "hamalert") {
+loadHamalert();
+} else if (page === "manual") {
+loadManual();
+} else if (page === "links") {
+loadLinks();
+}
+}
+const toggleFilterSelection = (selection, value) => {
+if (value === "All") {
+selection.clear();
+return;
+}
+if (selection.has(value)) {
+selection.delete(value);
+} else {
+selection.add(value);
+}
+};
+const buttonFilterValue = (button) => {
+if (!button) return "";
+const label = (button.textContent || "").trim();
+if (label === "ALL") return "All";
+if (label === "FT8/FT4") return "FT8FT4";
+return label;
+};
+const syncFilterButtons = (selector, selection) => {
+document.querySelectorAll(selector).forEach(button => {
+const value = buttonFilterValue(button);
+const active = value === "All" ? selection.size === 0 : selection.has(value);
+button.classList.toggle('active', active);
+});
+};
+const matchesModeSelection = (modeRaw, selection) => {
+if (selection.size === 0) return true;
+const mode = (modeRaw || "").toUpperCase();
+if (selection.has("CW") && mode === "CW") return true;
+if (selection.has("SSB") && mode === "SSB") return true;
+if (selection.has("FT8FT4") && (mode === "FT8" || mode === "FT4")) return true;
+return false;
+};
+const matchesBandSelection = (band, selection) => {
+if (selection.size === 0) return true;
+return selection.has(band);
+};
+const setMode = (mode, btn) => {
+toggleFilterSelection(currentModes, mode);
+syncFilterButtons('#dxspot-page .controls .control-group:first-child .btn', currentModes);
+updateTable();
+}
+const setBand = (band, btn) => {
+toggleFilterSelection(currentBands, band);
+syncFilterButtons('#dxspot-page .controls .control-group:last-child .btn', currentBands);
+updateTable();
+}
+const bandPlan = [
+{min: 1810, max: 2000, band: "160m", mode: "lsb"},
+{min: 3500, max: 3800, band: "80m", mode: "lsb"},
+{min: 5351.5, max: 5366.5, band: "60m", mode: "usb"},
+{min: 7000, max: 7200, band: "40m", mode: "lsb"},
+{min: 10100, max: 10150, band: "30m", mode: "usb"},
+{min: 14000, max: 14350, band: "20m", mode: "usb"},
+{min: 18068, max: 18168, band: "17m", mode: "usb"},
+{min: 21000, max: 21450, band: "15m", mode: "usb"},
+{min: 24890, max: 24990, band: "12m", mode: "usb"},
+{min: 28000, max: 29700, band: "10m", mode: "usb"}
+];
+let openWebRxBase = "";
+const normalizeOpenWebRx = (url) => {
+if (!url) return "";
+let u = ("" + url).trim();
+if (!u) return "";
+u = u.replace(/#.*$/, "");
+u = u.replace(/\/+$/, "");
+return u;
+};
+const getBandFromFreq = (freqKHz) => {
+for (const band of bandPlan) {
+if (freqKHz >= band.min && freqKHz <= band.max) {
+return band.band;
+}
+}
+if (freqKHz >= 30000 && freqKHz < 300000) return "VHF";
+if (freqKHz >= 300000 && freqKHz < 3000000) return "UHF";
+if (freqKHz >= 3000000 && freqKHz < 30000000) return "SHF";
+return "Other";
+};
+const getSdrModulation = (freqKHz, spotMode) => {
+const mode = (spotMode || "").toUpperCase().trim();
+if (mode === "CW" || mode.startsWith("CW")) {
+return "cw";
+}
+for (const band of bandPlan) {
+if (freqKHz >= band.min && freqKHz <= band.max) {
+return band.mode;
+}
+}
+return "usb";
+}
+const setOpenWebRxBaseFromInput = () => {
+const input = document.getElementById('openwebrx_url');
+openWebRxBase = normalizeOpenWebRx(input ? input.value : "");
+};
+const getQrzLink = (callsign) => {
+const call = (callsign || "").trim();
+return call ? "https://www.qrz.com/db/" + encodeURIComponent(call) : "#";
+}
+const getSdrLink = (freqKHz, spotMode) => {
+if (!openWebRxBase || openWebRxBase.trim() === "") return "#";
+const mod = getSdrModulation(freqKHz, spotMode);
+let freqStr = Number(freqKHz || 0).toFixed(2);
+freqStr = freqStr.replace(/\.0+$/, "").replace(/\.([1-9]*?)0+$/, ".$1");
+const sep = openWebRxBase.includes("?") ? "&" : "/?";
+return openWebRxBase + sep + "f=" + freqStr + mod;
+}
+const formatSpotUtc = (raw) => {
+let text = (raw || "").trim();
+const tPos = text.indexOf("T");
+if (tPos >= 0 && (tPos + 5) <= text.length) {
+text = text.substring(tPos + 1);
+}
+if (text.endsWith("Z") || text.endsWith("z")) {
+text = text.substring(0, text.length - 1);
+}
+if (text.length >= 5 && text.charAt(2) === ":") {
+return text.substring(0, 5);
+}
+if (text.length >= 4) {
+return text.substring(0, 2) + ":" + text.substring(2, 4);
+}
+if (text.length >= 2) {
+return text.substring(0, 2) + ":00";
+}
+return text || "--:--";
+}
+const formatAprsTimeLocal = (raw) => {
+const utc = formatSpotUtc(raw);
+if (utc === "--:--" || utc.length < 5) return utc;
+const tzEl = document.getElementById('timezone');
+const tzH = tzEl ? (parseFloat(tzEl.value) || 0) : 0;
+if (tzH === 0) return utc;
+let h = parseInt(utc.substring(0, 2), 10);
+const m = utc.substring(3, 5);
+h = ((h + Math.trunc(tzH)) % 24 + 24) % 24;
+return (h < 10 ? '0' : '') + h + ':' + m;
+}
+const updateTable = () => {
+const tbody = document.getElementById('spots-tbody');
+tbody.innerHTML = "";
+const filtered = allSpots.filter(spot => {
+if (!matchesModeSelection(spot.mode, currentModes)) {
+return false;
+}
+if (currentBands.size > 0) {
+if (!spot.frequency) return false;
+const band = getBandFromFreq(spot.frequency);
+if (!matchesBandSelection(band, currentBands)) return false;
+}
+const cont = getSpotContinent(spot.spotter);
+if (cont && continentFilters[cont] === false) return false;
+return true;
+});
+filtered.forEach(spot => {
+const row = tbody.insertRow();
+row.insertCell(0).textContent = formatSpotUtc(spot.time);
+const callCell = row.insertCell(1);
+if (spot.callsign) {
+const link = document.createElement("a");
+link.href = getQrzLink(spot.callsign);
+link.target = "_blank";
+link.rel = "noopener noreferrer";
+link.title = "Clique para ver o perfil no QRZ";
+link.textContent = spot.callsign;
+callCell.appendChild(link);
+} else {
+callCell.textContent = "-";
+}
+const freqCell = row.insertCell(2);
+if (spot.frequency) {
+const freqText = (spot.frequency / 1000).toFixed(3);
+const sdrLink = getSdrLink(spot.frequency, spot.mode);
+if (sdrLink && sdrLink !== "#" && openWebRxBase && openWebRxBase.trim() !== "") {
+const link = document.createElement("a");
+link.href = sdrLink;
+link.target = "_blank";
+link.rel = "noopener noreferrer";
+link.title = "Clique para ouvir a estação no WebSDR";
+link.textContent = freqText;
+freqCell.appendChild(link);
+} else {
+freqCell.textContent = freqText;
+}
+} else {
+freqCell.textContent = "-";
+}
+row.insertCell(3).textContent = spot.mode || "-";
+row.insertCell(4).textContent = (spot.country && spot.country.trim()) ? spot.country : "-";
+});
+document.getElementById('status').textContent = "Exibindo " + filtered.length + " spots";
+}
+const screenOptionsDefault = ["hamclock","dxcluster","aprsis","aprsradar","bandinfo","sunspots","weather","weatherforecast","pota","hamalert","matrix","lokalizacja"];
+const applyScreenOrderToUI = (order) => {
+const arr = Array.isArray(order) && order.length ? order : screenOptionsDefault;
+for (let i = 0; i < 12; i++) {
+const sel = document.getElementById(`screen_slot_${i+1}`);
+if (!sel) continue;
+sel.value = arr[i] || screenOptionsDefault[i] || "off";
+}
+};
+const readScreenOrderFromUI = () => {
+const arr = [];
+for (let i = 0; i < 12; i++) {
+const sel = document.getElementById(`screen_slot_${i+1}`);
+arr.push(sel ? sel.value : "off");
+}
+return arr;
+};
+const normalizeAprsAlertInput = (value) => {
+const src = (value || "").toUpperCase();
+const parts = src.split(',');
+const cleaned = [];
+for (let i = 0; i < parts.length; i++) {
+let token = parts[i].trim();
+if (!token) continue;
+const wildcardAnySsid = token.endsWith('*');
+if (wildcardAnySsid) {
+token = token.slice(0, -1);
+}
+token = token.replace(/[^A-Z0-9\-\/]/g, '');
+if (wildcardAnySsid && token) {
+token += '*';
+}
+if (!token) continue;
+cleaned.push(token);
+if (cleaned.length >= 20) break;
+}
+return cleaned.join(',');
+};
+const applyConfigToUI = (data) => {
+document.getElementById('wifi_ssid').value = data.wifi_ssid || "";
+document.getElementById('wifi_pass').value = data.wifi_pass || "";
+document.getElementById('wifi_ssid2').value = data.wifi_ssid2 || "";
+document.getElementById('wifi_pass2').value = data.wifi_pass2 || "";
+document.getElementById('uart2_baud').value = (data.uart2_baud !== undefined && data.uart2_baud !== null) ? data.uart2_baud : 9600;
+document.getElementById('uart2_data_bits').value = (data.uart2_data_bits !== undefined && data.uart2_data_bits !== null) ? String(data.uart2_data_bits) : "8";
+document.getElementById('uart2_parity').value = data.uart2_parity || "none";
+document.getElementById('uart2_stop_bits').value = (data.uart2_stop_bits !== undefined && data.uart2_stop_bits !== null) ? String(data.uart2_stop_bits) : "1";
+const backlightValue = (data.tft_backlight !== undefined && data.tft_backlight !== null) ? data.tft_backlight : 100;
+document.getElementById('tft_backlight').value = backlightValue;
+document.getElementById('tft_backlight_value').textContent = backlightValue;
+const nightDimmingValue = (data.tft_night_dimming !== undefined && data.tft_night_dimming !== null) ? data.tft_night_dimming : 0;
+document.getElementById('tft_night_dimming').value = nightDimmingValue;
+document.getElementById('tft_night_dimming_value').textContent = nightDimmingValue;
+const tftLangSelect = document.getElementById('tft_lang');
+if (tftLangSelect) {
+tftLangSelect.value = data.tft_lang || "pl";
+}
+const tftStyleSelect = document.getElementById('tft_style');
+if (tftStyleSelect) {
+tftStyleSelect.value = data.tft_style || "dark";
+}
+const tableSizeSelect = document.getElementById('table_size');
+if (tableSizeSelect) {
+tableSizeSelect.value = data.table_size || "normal";
+}
+const tftRotationValue = (data.tft_rotation !== undefined && data.tft_rotation !== null) ? data.tft_rotation : 1;
+document.getElementById('tft_rotation').value = tftRotationValue;
+const tftInvertValue = (data.tft_invert === true || data.tft_invert === false) ? (data.tft_invert ? "1" : "0") : "1";
+document.getElementById('tft_invert').value = tftInvertValue;
+document.getElementById('tft_auto_switch').checked = data.tft_auto_switch === true;
+const tftSwitchTimeValue = parseInt(data.tft_switch_time_sec, 10);
+document.getElementById('tft_switch_time_sec').value = Number.isFinite(tftSwitchTimeValue) ? Math.min(3600, Math.max(1, tftSwitchTimeValue)) : 30;
+const touchRotationValue = (data.touch_rotation !== undefined && data.touch_rotation !== null) ? data.touch_rotation : 1;
+document.getElementById('touch_rotation').value = touchRotationValue;
+document.getElementById('touch_swap_mode').value = data.touch_swap_mode || "none";
+document.getElementById('cluster_host').value = data.cluster_host || "";
+document.getElementById('cluster_port').value = data.cluster_port || "";
+document.getElementById('pota_api_url').value = data.pota_api_url || "https://api.pota.app/v1/spots";
+document.getElementById('hamalert_host').value = data.hamalert_host || "";
+document.getElementById('hamalert_port').value = (data.hamalert_port !== undefined && data.hamalert_port !== null && data.hamalert_port > 0) ? data.hamalert_port : "";
+document.getElementById('hamalert_login').value = data.hamalert_login || "";
+document.getElementById('hamalert_password').value = data.hamalert_password || "";
+document.getElementById('user_callsign').value = data.user_callsign || "";
+document.getElementById('user_locator').value = data.user_locator || "";
+const timezoneValue = (data.timezone !== undefined && data.timezone !== null) ? data.timezone : 0;
+document.getElementById('timezone').value = timezoneValue;
+if (data.user_lat !== null && data.user_lat !== undefined) {
+document.getElementById('user_lat').value = data.user_lat;
+} else {
+document.getElementById('user_lat').value = "";
+}
+if (data.user_lon !== null && data.user_lon !== undefined) {
+document.getElementById('user_lon').value = data.user_lon;
+} else {
+document.getElementById('user_lon').value = "";
+}
+document.getElementById('use_gps_if_active').checked = data.use_gps_if_active === true;
+document.getElementById('qrz_user').value = data.qrz_user || "";
+document.getElementById('qrz_pass').value = data.qrz_pass || "";
+document.getElementById('weather_key').value = data.weather_key || "";
+document.getElementById('openwebrx_url').value = data.openwebrx_url || "";
+openWebRxBase = normalizeOpenWebRx(data.openwebrx_url);
+document.getElementById('qrz_status').value = data.qrz_status || "";
+document.getElementById('cluster_noann').checked = data.cluster_noann !== false;
+document.getElementById('cluster_nowwv').checked = data.cluster_nowwv !== false;
+document.getElementById('cluster_nowcy').checked = data.cluster_nowcy !== false;
+document.getElementById('cluster_usefilters').checked = data.cluster_usefilters === true;
+document.getElementById('cluster_filters').value = data.cluster_filters || "";
+document.getElementById('aprs_host').value = data.aprs_host || "";
+document.getElementById('aprs_port').value = (data.aprs_port !== undefined && data.aprs_port !== null) ? data.aprs_port : "";
+document.getElementById('aprs_callsign').value = data.aprs_callsign || "";
+const aprsSsidFromApi = parseInt(data.aprs_ssid, 10);
+const aprsSsidSafe = Number.isFinite(aprsSsidFromApi) ? Math.min(15, Math.max(0, aprsSsidFromApi)) : 0;
+document.getElementById('aprs_ssid').value = String(aprsSsidSafe);
+if (data.aprs_passcode !== undefined && data.aprs_passcode !== null) {
+document.getElementById('aprs_passcode').value = data.aprs_passcode;
+} else {
+document.getElementById('aprs_passcode').value = "";
+}
+if (data.aprs_radius !== undefined && data.aprs_radius !== null) {
+document.getElementById('aprs_radius').value = data.aprs_radius;
+} else {
+document.getElementById('aprs_radius').value = "";
+}
+const aprsBeacon = (data.aprs_beacon === undefined || data.aprs_beacon === null) ? true : !!data.aprs_beacon;
+document.getElementById('aprs_beacon').checked = aprsBeacon;
+document.getElementById('aprs_symbol').value = data.aprs_symbol || "/-";
+document.getElementById('aprs_comment').value = data.aprs_comment || "";
+document.getElementById('aprs_alert').value = data.aprs_alert || "";
+document.getElementById('aprs_alert_enabled').checked = data.aprs_alert_enabled !== false;
+document.getElementById('enable_led_alert').checked = data.enable_led_alert !== false;
+const ledDurationFromApi = parseInt(data.led_alert_duration_ms, 10);
+const ledDurationSafe = Number.isFinite(ledDurationFromApi) ? Math.min(60000, Math.max(100, ledDurationFromApi)) : 5000;
+document.getElementById('led_alert_duration_ms').value = ledDurationSafe;
+const ledBlinkFromApi = parseInt(data.led_alert_blink_ms, 10);
+const ledBlinkSafe = Number.isFinite(ledBlinkFromApi) ? Math.min(5000, Math.max(50, ledBlinkFromApi)) : 500;
+document.getElementById('led_alert_blink_ms').value = ledBlinkSafe;
+const alertMinSecFromApi = parseInt(data.aprs_alert_min_sec, 10);
+const alertMinSecSafe = Number.isFinite(alertMinSecFromApi) ? Math.min(86400, Math.max(0, alertMinSecFromApi)) : 300;
+document.getElementById('aprs_alert_min_sec').value = alertMinSecSafe;
+const alertScreenSecFromApi = parseInt(data.aprs_alert_screen_sec, 10);
+const alertScreenSecSafe = Number.isFinite(alertScreenSecFromApi) ? Math.min(60, Math.max(1, alertScreenSecFromApi)) : 5;
+document.getElementById('aprs_alert_screen_sec').value = alertScreenSecSafe;
+document.getElementById('aprs_alert_nearby_enabled').checked = data.aprs_alert_nearby_enabled !== false;
+document.getElementById('aprs_alert_wx_enabled').checked = data.aprs_alert_wx_enabled === true;
+document.getElementById('weather_alert_storm_enabled').checked = data.weather_alert_storm_enabled === true;
+document.getElementById('weather_alert_wind_enabled').checked = data.weather_alert_wind_enabled === true;
+const windThresholdFromApi = parseFloat(data.weather_alert_wind_threshold_ms);
+const windThresholdSafe = Number.isFinite(windThresholdFromApi) ? Math.min(60.0, Math.max(1.0, windThresholdFromApi)) : 12.0;
+document.getElementById('weather_alert_wind_threshold_ms').value = windThresholdSafe;
+const alertDistanceFromApi = parseFloat(data.aprs_alert_distance_km);
+const alertDistanceSafe = Number.isFinite(alertDistanceFromApi) ? Math.min(500, Math.max(0.1, alertDistanceFromApi)) : 1.0;
+document.getElementById('aprs_alert_distance_km').value = alertDistanceSafe;
+const intervalFromApi = parseInt(data.aprs_interval_min, 10);
+const intervalSafe = Number.isFinite(intervalFromApi) ? Math.min(180, Math.max(1, intervalFromApi)) : 29;
+document.getElementById('aprs_interval_min').value = intervalSafe;
+applyScreenOrderToUI(data.screen_order);
+updateModulesInfoEN(data || {});
+};
+const loadConfig = () => {
+fetch('/api/config')
+.then(r => r.json())
+.then(data => {
+applyConfigToUI(data || {});
+})
+.catch(err => console.log("Erro ao carregar a configuração:", err));
+};
+const updateUart2StatusView = (data) => {
+const gpsStatusEl = document.getElementById('uart2_status_gps');
+const btStatusEl = document.getElementById('uart2_status_bt');
+if (!gpsStatusEl || !btStatusEl) return;
+const gpsActiveText = (data && data.gps_active === true) ? 'Active' : 'Inactive';
+const gpsFixText = (data && data.gps_fix === true) ? 'Yes' : 'No';
+const btActiveText = (data && data.bt_active === true) ? 'Active' : 'Inactive';
+gpsStatusEl.textContent = `GPS: ${gpsActiveText} FIX: ${gpsFixText}`;
+btStatusEl.textContent = `Módulo BT: ${btActiveText}`;
+};
+const loadUart2Status = () => {
+fetch('/api/uart_status')
+.then(r => r.json())
+.then(data => updateUart2StatusView(data || {}))
+.catch(() => updateUart2StatusView({}));
+};
+const createSettingsBackupEnvelope = (config) => ({
+format: "ESP32-HAM-CLOCK-config",
+version: 1,
+exportedAt: new Date().toISOString(),
+config
+});
+const normalizeImportedSettings = (data) => {
+if (!data || typeof data !== 'object' || Array.isArray(data)) {
+throw new Error('invalid_format');
+}
+const rawConfig = (data.format === 'ESP32-HAM-CLOCK-config' && data.config && typeof data.config === 'object')
+? data.config
+: data;
+if (!rawConfig || typeof rawConfig !== 'object' || Array.isArray(rawConfig)) {
+throw new Error('invalid_config');
+}
+return rawConfig;
+};
+const exportSettingsToFile = () => {
+setOpenWebRxBaseFromInput();
+const payload = collectConfigPayload();
+const envelope = createSettingsBackupEnvelope(payload);
+const text = JSON.stringify(envelope, null, 2);
+const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+const url = URL.createObjectURL(blob);
+const link = document.createElement('a');
+const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+link.href = url;
+link.download = `esp32-ham-clock-settings-${stamp}.txt`;
+document.body.appendChild(link);
+link.click();
+document.body.removeChild(link);
+URL.revokeObjectURL(url);
+};
+const openSettingsFilePicker = () => {
+const fileInput = document.getElementById('settings_file_input');
+if (!fileInput) return;
+fileInput.value = '';
+fileInput.click();
+};
+const importSettingsFromFile = (file) => {
+if (!file) {
+return;
+}
+const reader = new FileReader();
+reader.onload = () => {
+try {
+const parsed = JSON.parse(String(reader.result || ''));
+const importedConfig = normalizeImportedSettings(parsed);
+applyConfigToUI(importedConfig);
+if (confirm('As configurações foram carregadas no formulário. Salvar no dispositivo agora?')) {
+saveConfig(importedConfig);
+} else {
+alert('As configurações foram carregadas no formulário. Clique em "Salvar configuração" para gravá-las no dispositivo.');
+}
+} catch (err) {
+alert('Não foi possível carregar o arquivo de configurações. Verifique se o TXT contém um backup JSON válido.');
+}
+};
+reader.onerror = () => {
+alert('Erro ao ler o arquivo de configurações.');
+};
+reader.readAsText(file, 'utf-8');
+};
+let allPOTASpots = [];
+let potaModeFilters = new Set();
+let potaBandFilters = new Set();
+function setPotaMode(mode, btn) {
+toggleFilterSelection(potaModeFilters, mode);
+syncFilterButtons('#pota-page .control-group:first-child .btn', potaModeFilters);
+updatePOTATable();
+}
+function setPotaBand(band, btn) {
+toggleFilterSelection(potaBandFilters, band);
+syncFilterButtons('#pota-page .control-group:last-child .btn', potaBandFilters);
+updatePOTATable();
+}
+function updatePOTATable() {
+const tbody = document.getElementById('pota-tbody');
+tbody.innerHTML = "";
+if (!Array.isArray(allPOTASpots) || allPOTASpots.length === 0) {
+document.getElementById('pota-status').textContent = "Sem dados do POTA.";
+return;
+}
+const sorted = allPOTASpots.slice().sort((a, b) => {
+const ta = a.spotTime ? new Date(a.spotTime).getTime() : (a.time ? new Date(a.time).getTime() : 0);
+const tb = b.spotTime ? new Date(b.spotTime).getTime() : (b.time ? new Date(b.time).getTime() : 0);
+return tb - ta;
+});
+const filtered = sorted.filter(spot => {
+if (!matchesModeSelection(spot.mode, potaModeFilters)) {
+return false;
+}
+if (potaBandFilters.size > 0) {
+const freqMHz = parseFloat(spot.frequency);
+if (!isFinite(freqMHz) || freqMHz <= 0) return false;
+const band = getBandFromFreq(freqMHz * 1000);
+if (!matchesBandSelection(band, potaBandFilters)) return false;
+}
+return true;
+});
+filtered.slice(0, 50).forEach(spot => {
+const row = tbody.insertRow();
+const tStr = spot.spotTime || spot.time || "";
+row.insertCell(0).textContent = formatSpotUtc(tStr);
+const callCell = row.insertCell(1);
+const call = spot.activator || spot.callsign || "";
+if (call) {
+const link = document.createElement("a");
+link.href = getQrzLink(call);
+link.target = "_blank";
+link.rel = "noopener noreferrer";
+link.title = "Clique para ver o perfil no QRZ";
+link.textContent = call;
+callCell.appendChild(link);
+} else {
+callCell.textContent = "-";
+}
+const freqCell = row.insertCell(2);
+let freq = (spot.frequency !== undefined && spot.frequency !== null) ? parseFloat(spot.frequency) : NaN;
+if (isFinite(freq) && freq > 0) {
+const freqText = freq.toFixed(3);
+const freqKHz = freq * 1000.0;
+const sdrLink = getSdrLink(freqKHz, spot.mode);
+if (sdrLink && sdrLink !== "#" && openWebRxBase && openWebRxBase.trim() !== "") {
+const link = document.createElement("a");
+link.href = sdrLink;
+link.target = "_blank";
+link.rel = "noopener noreferrer";
+link.title = "Clique para ouvir a estação no WebSDR";
+link.textContent = freqText;
+freqCell.appendChild(link);
+} else {
+freqCell.textContent = freqText;
+}
+} else {
+freqCell.textContent = "-";
+}
+row.insertCell(3).textContent = spot.mode || "-";
+row.insertCell(4).textContent = spot.country || "-";
+});
+document.getElementById('pota-status').textContent = "Exibindo " + filtered.length + " spots do POTA";
+}
+function loadPOTA() {
+document.getElementById('pota-status').textContent = "Buscando dados do POTA...";
+fetch('/api/pota')
+.then(r => r.json())
+.then(data => {
+const spots = Array.isArray(data.spots) ? data.spots : [];
+allPOTASpots = spots;
+if (spots.length > 0) {
+console.log('Primeiro spot do POTA (backend):', spots[0]);
+const debugDiv = document.getElementById('pota-raw-json');
+if (debugDiv) {
+debugDiv.textContent = JSON.stringify(data, null, 2) + "\nPrimeiro spot:\n" + JSON.stringify(spots[0], null, 2);
+}
+} else {
+const debugDiv = document.getElementById('pota-raw-json');
+if (debugDiv) debugDiv.textContent = JSON.stringify(data, null, 2);
+}
+updatePOTATable();
+})
+.catch(err => {
+document.getElementById('pota-status').textContent = "Falha ao buscar os dados do POTA.";
+allPOTASpots = [];
+updatePOTATable();
+const rawJson = document.getElementById('pota-raw-json');
+if (rawJson) {
+rawJson.textContent = "Falha ao buscar ou interpretar os dados.";
+}
+});
+}
+let allHamalertSpots = [];
+let hamalertModeFilters = new Set();
+let hamalertBandFilters = new Set();
+function setHamalertMode(mode, btn) {
+toggleFilterSelection(hamalertModeFilters, mode);
+syncFilterButtons('#hamalert-page .control-group:first-child .btn', hamalertModeFilters);
+updateHamalertTable();
+}
+function setHamalertBand(band, btn) {
+toggleFilterSelection(hamalertBandFilters, band);
+syncFilterButtons('#hamalert-page .hamalert-band-group .btn', hamalertBandFilters);
+updateHamalertTable();
+}
+function formatHamalertTime(value) {
+const raw = (value === undefined || value === null) ? "" : String(value).trim();
+if (!raw) return "-";
+if (/^\d{2}:\d{2}$/.test(raw)) return raw;
+if (/^\d{2}:\d{2}Z$/i.test(raw)) return raw.substring(0, 5);
+if (/^\d{4}Z$/i.test(raw)) return raw.substring(0, 2) + ":" + raw.substring(2, 4);
+const dt = new Date(raw);
+if (!Number.isNaN(dt.getTime())) {
+return dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+return raw;
+}
+function updateHamalertTable() {
+const tbody = document.getElementById('hamalert-tbody');
+tbody.innerHTML = "";
+if (!Array.isArray(allHamalertSpots) || allHamalertSpots.length === 0) {
+document.getElementById('hamalert-status').textContent = "Sem dados do HAMALERT.";
+return;
+}
+const filtered = allHamalertSpots.filter(spot => {
+if (!matchesModeSelection(spot.mode, hamalertModeFilters)) {
+return false;
+}
+if (hamalertBandFilters.size > 0) {
+const freqMHz = parseFloat(spot.frequency);
+if (!isFinite(freqMHz) || freqMHz <= 0) return false;
+const band = getBandFromFreq(freqMHz * 1000);
+if (!matchesBandSelection(band, hamalertBandFilters)) return false;
+}
+return true;
+});
+filtered.slice(0, 50).forEach(spot => {
+const row = tbody.insertRow();
+const tStr = spot.spotTime || spot.time || "";
+row.insertCell(0).textContent = formatHamalertTime(tStr);
+const callCell = row.insertCell(1);
+const call = spot.callsign || "";
+if (call) {
+const link = document.createElement("a");
+link.href = getQrzLink(call);
+link.target = "_blank";
+link.rel = "noopener noreferrer";
+link.title = "Clique para ver o perfil no QRZ";
+link.textContent = call;
+callCell.appendChild(link);
+} else {
+callCell.textContent = "-";
+}
+const freqCell = row.insertCell(2);
+const freq = parseFloat(spot.frequency);
+if (isFinite(freq) && freq > 0) {
+const freqText = freq.toFixed(3);
+const freqKHz = freq * 1000.0;
+const sdrLink = getSdrLink(freqKHz, spot.mode);
+if (sdrLink && sdrLink !== "#" && openWebRxBase && openWebRxBase.trim() !== "") {
+const link = document.createElement("a");
+link.href = sdrLink;
+link.target = "_blank";
+link.rel = "noopener noreferrer";
+link.title = "Clique para ouvir a estação no WebSDR";
+link.textContent = freqText;
+freqCell.appendChild(link);
+} else {
+freqCell.textContent = freqText;
+}
+} else {
+freqCell.textContent = "-";
+}
+row.insertCell(3).textContent = spot.mode || "-";
+row.insertCell(4).textContent = spot.country || "-";
+});
+document.getElementById('hamalert-status').textContent = "Exibindo " + filtered.length + " spots do HAMALERT";
+}
+function loadHamalert() {
+document.getElementById('hamalert-status').textContent = "Buscando dados do HAMALERT...";
+fetch('/api/hamalert')
+.then(r => r.json())
+.then(data => {
+const spots = Array.isArray(data.spots) ? data.spots : [];
+allHamalertSpots = spots;
+const raw = document.getElementById('hamalert-raw-json');
+if (raw) raw.textContent = JSON.stringify(data, null, 2);
+updateHamalertTable();
+})
+.catch(() => {
+allHamalertSpots = [];
+const tbody = document.getElementById('hamalert-tbody');
+if (tbody) tbody.innerHTML = "";
+document.getElementById('hamalert-status').textContent = "Falha ao buscar os dados do HAMALERT.";
+const raw = document.getElementById('hamalert-raw-json');
+if (raw) raw.textContent = "Falha ao buscar ou interpretar os dados.";
+});
+}
+const loadSpots = () => {
+fetch('/api/spots')
+.then(r => r.json())
+.then(data => {
+allSpots = data.spots || [];
+updateTable();
+})
+.catch(err => console.log("Erro ao carregar os spots:", err));
+}
+let allAPRSStations = [];
+let aprsSortMode = 'time';
+const setAprsSort = (mode) => {
+aprsSortMode = mode;
+['time', 'dist', 'name'].forEach(m => {
+document.getElementById('aprs-sort-' + m).classList.toggle('active', m === mode);
+});
+updateAPRSTable();
+};
+const updateAPRSTable = () => {
+const tbody = document.getElementById('aprs-tbody');
+tbody.innerHTML = "";
+const sorted = allAPRSStations.slice().sort((a, b) => {
+if (aprsSortMode === 'dist') {
+const da = (a.hasLatLon && a.distance > 0) ? a.distance : Infinity;
+const db = (b.hasLatLon && b.distance > 0) ? b.distance : Infinity;
+return da - db;
+}
+if (aprsSortMode === 'name') {
+return (a.callsign || '').localeCompare(b.callsign || '');
+}
+return (b.time || '').localeCompare(a.time || '');
+});
+sorted.forEach(station => {
+const row = tbody.insertRow();
+row.insertCell(0).textContent = formatAprsTimeLocal(station.time);
+const callsignCell = row.insertCell(1);
+const sym = (station.symbol || "").toUpperCase();
+if (station.callsign) {
+const callLink = document.createElement("a");
+callLink.href = "https://aprs.fi/#!call=a%2F" + encodeURIComponent(station.callsign) + "&timerange=3600&tail=3600";
+callLink.target = "_blank";
+callLink.rel = "noopener noreferrer";
+callLink.title = "Clique para ver a estação no aprs.fi";
+callLink.textContent = station.callsign;
+callLink.style.textDecoration = "none";
+callLink.style.color = "inherit";
+if (sym === "HUMAN")         callLink.style.color = "#3981FF";
+else if (sym === "HOUSE")    callLink.style.color = "#FFFF00";
+else if (sym === "CAR")      callLink.style.color = "#FF0000";
+else if (sym === "HAMCLOCK") callLink.style.color = "#FFA500";
+callsignCell.appendChild(callLink);
+} else {
+callsignCell.textContent = "-";
+}
+row.insertCell(2).textContent = station.symbol || "-";
+const distCell = row.insertCell(3);
+if (station.hasLatLon && station.distance > 0) {
+distCell.textContent = Math.round(station.distance) + " km";
+} else {
+distCell.textContent = "-";
+}
+const freqCell = row.insertCell(4);
+freqCell.textContent = (station.freq_mhz && station.freq_mhz > 0) ? station.freq_mhz.toFixed(3) : "-";
+const commentCell = row.insertCell(5);
+commentCell.textContent = station.comment || "-";
+commentCell.className = "aprs-comment-col";
+});
+document.getElementById('aprs-status').textContent = "Exibindo " + allAPRSStations.length + " estações APRS";
+}
+const loadAPRS = () => {
+fetch('/api/aprs')
+.then(r => r.json())
+.then(data => {
+allAPRSStations = data.stations || [];
+updateAPRSTable();
+})
+.catch(err => console.log("Erro ao carregar as estações APRS:", err));
+}
+const setPropagationField = (id, value) => {
+const el = document.getElementById(id);
+if (!el) return;
+const text = (value === undefined || value === null) ? "" : String(value).trim();
+el.textContent = text.length ? text : "--";
+return el;
+}
+const getPropagationMetricClass = (id, value) => {
+const text = (value === undefined || value === null) ? "" : String(value).trim();
+if (id === 'prop-sfi') return 'prop-value-sfi';
+if (id === 'prop-aindex') return 'prop-value-aindex';
+if (id === 'prop-muf') return 'prop-value-muf';
+if (id === 'prop-updated') return 'prop-value-updated';
+if (id === 'prop-kindex') {
+const kValue = parseFloat(text);
+if (!Number.isFinite(kValue)) return 'prop-value-updated';
+if (kValue < 4) return 'prop-value-good';
+if (kValue < 6) return 'prop-value-warn';
+return 'prop-value-bad';
+}
+return '';
+}
+const getConditionClass = (value) => {
+const text = (value || '').toUpperCase();
+if (text.includes('GOOD')) return 'prop-value-good';
+if (text.includes('FAIR')) return 'prop-value-warn';
+if (text.includes('POOR')) return 'prop-value-bad';
+return 'prop-value-updated';
+}
+const updatePropagationView = (data) => {
+const valid = !!(data && data.valid);
+const bands = (data && Array.isArray(data.hfBands)) ? data.hfBands : [];
+['prop-sfi', 'prop-kindex', 'prop-aindex', 'prop-muf', 'prop-updated'].forEach((id) => {
+const valueMap = {
+'prop-sfi': valid ? data.sfi : '--',
+'prop-kindex': valid ? data.kindex : '--',
+'prop-aindex': valid ? data.aindex : '--',
+'prop-muf': valid ? data.muf : '--',
+'prop-updated': valid ? data.updated : '--'
+};
+const el = setPropagationField(id, valueMap[id]);
+if (el) {
+el.className = getPropagationMetricClass(id, valueMap[id]);
+}
+});
+const tbody = document.getElementById('prop-hf-tbody');
+if (tbody) {
+tbody.innerHTML = "";
+bands.forEach((band) => {
+const row = tbody.insertRow();
+row.insertCell(0).textContent = band.label || "-";
+const dayCell = row.insertCell(1);
+dayCell.textContent = band.day || "-";
+dayCell.className = getConditionClass(band.day || '');
+const nightCell = row.insertCell(2);
+nightCell.textContent = band.night || "-";
+nightCell.className = getConditionClass(band.night || '');
+});
+if (bands.length === 0) {
+const row = tbody.insertRow();
+const cell = row.insertCell(0);
+cell.colSpan = 3;
+cell.className = 'prop-empty';
+cell.textContent = "Sem dados de INFO DAS BANDAS HF";
+}
+}
+const status = document.getElementById('propagation-status');
+if (status) {
+if (valid) {
+status.textContent = "Os dados de propagação estão atualizados";
+} else {
+const err = (data && data.lastError) ? String(data.lastError).trim() : "";
+status.textContent = err ? ("Sem dados atuais: " + err) : "Sem dados atuais de propagação";
+}
+}
+}
+const loadPropagation = () => {
+fetch('/api/propagation')
+.then(r => r.json())
+.then(data => {
+updatePropagationView(data || {});
+})
+.catch(() => {
+updatePropagationView({ valid: false, hfBands: [], lastError: "Erro de conexão com a API" });
+});
+}
+const collectHamalertConfig = () => {
+const login = document.getElementById('hamalert_login').value.trim();
+const password = document.getElementById('hamalert_password').value.trim();
+const enabled = login.length > 0 && password.length > 0;
+const host = document.getElementById('hamalert_host').value.trim();
+const rawPort = parseInt(document.getElementById('hamalert_port').value, 10);
+return {
+host: enabled ? (host || "hamalert.org") : "",
+port: enabled ? ((Number.isFinite(rawPort) && rawPort > 0 && rawPort <= 65535) ? rawPort : 7300) : 0,
+login,
+password
+};
+};
+const collectConfigPayload = () => {
+const hamalertCfg = collectHamalertConfig();
+return {
+wifi_ssid: document.getElementById('wifi_ssid').value,
+wifi_pass: document.getElementById('wifi_pass').value,
+wifi_ssid2: document.getElementById('wifi_ssid2').value,
+wifi_pass2: document.getElementById('wifi_pass2').value,
+uart2_mode: (() => {
+const select = document.getElementById('connectedModule');
+const moduleCode = select ? String(select.value || 'none').toLowerCase() : 'none';
+if (moduleCode === 'gps') return 'gps';
+if (moduleCode === 'aprs_tnc' || moduleCode === 'aprs_tnc_kiss' || moduleCode === 'esp32_bridge') return 'bt';
+return 'off';
+})(),
+uart2_baud: (() => {
+const raw = parseInt(document.getElementById('uart2_baud').value, 10);
+if (!Number.isFinite(raw)) return 9600;
+return Math.min(2000000, Math.max(300, raw));
+})(),
+uart2_data_bits: (() => {
+const raw = parseInt(document.getElementById('uart2_data_bits').value, 10);
+return (raw === 7) ? 7 : 8;
+})(),
+uart2_parity: document.getElementById('uart2_parity').value,
+uart2_stop_bits: (() => {
+const raw = parseInt(document.getElementById('uart2_stop_bits').value, 10);
+return (raw === 2) ? 2 : 1;
+})(),
+uart2_connected_module: (() => {
+const select = document.getElementById('connectedModule');
+return select ? select.value : 'none';
+})(),
+tft_backlight: parseInt(document.getElementById('tft_backlight').value) || 100,
+tft_night_dimming: parseInt(document.getElementById('tft_night_dimming').value) || 0,
+tft_lang: (document.getElementById('tft_lang') ? document.getElementById('tft_lang').value : "pl"),
+tft_style: (document.getElementById('tft_style') ? document.getElementById('tft_style').value : "dark"),
+table_size: (document.getElementById('table_size') ? document.getElementById('table_size').value : "normal"),
+tft_rotation: (isNaN(parseInt(document.getElementById('tft_rotation').value)) ? 1 : parseInt(document.getElementById('tft_rotation').value)),
+tft_invert: (document.getElementById('tft_invert').value === "1"),
+tft_auto_switch: document.getElementById('tft_auto_switch').checked,
+tft_switch_time_sec: (() => {
+const raw = parseInt(document.getElementById('tft_switch_time_sec').value, 10);
+if (!Number.isFinite(raw)) return 30;
+return Math.min(3600, Math.max(1, raw));
+})(),
+touch_rotation: (isNaN(parseInt(document.getElementById('touch_rotation').value)) ? 1 : parseInt(document.getElementById('touch_rotation').value)),
+touch_swap_mode: document.getElementById('touch_swap_mode').value,
+cluster_host: document.getElementById('cluster_host').value,
+cluster_port: parseInt(document.getElementById('cluster_port').value),
+pota_api_url: document.getElementById('pota_api_url').value,
+hamalert_host: hamalertCfg.host,
+hamalert_port: hamalertCfg.port,
+hamalert_login: hamalertCfg.login,
+hamalert_password: hamalertCfg.password,
+user_callsign: document.getElementById('user_callsign').value,
+user_locator: document.getElementById('user_locator').value,
+timezone: parseFloat(document.getElementById('timezone').value) || 0,
+user_lat: parseFloat(document.getElementById('user_lat').value) || 0,
+user_lon: parseFloat(document.getElementById('user_lon').value) || 0,
+use_gps_if_active: document.getElementById('use_gps_if_active').checked,
+qrz_user: document.getElementById('qrz_user').value,
+qrz_pass: document.getElementById('qrz_pass').value,
+weather_key: document.getElementById('weather_key').value,
+openwebrx_url: document.getElementById('openwebrx_url').value,
+cluster_noann: document.getElementById('cluster_noann').checked,
+cluster_nowwv: document.getElementById('cluster_nowwv').checked,
+cluster_nowcy: document.getElementById('cluster_nowcy').checked,
+cluster_usefilters: document.getElementById('cluster_usefilters').checked,
+cluster_filters: document.getElementById('cluster_filters').value,
+aprs_host: document.getElementById('aprs_host').value,
+aprs_port: parseInt(document.getElementById('aprs_port').value) || 14580,
+aprs_callsign: document.getElementById('aprs_callsign').value,
+aprs_ssid: (() => {
+const raw = parseInt(document.getElementById('aprs_ssid').value, 10);
+if (!Number.isFinite(raw)) return 0;
+return Math.min(15, Math.max(0, raw));
+})(),
+aprs_passcode: parseInt(document.getElementById('aprs_passcode').value) || 0,
+aprs_radius: parseInt(document.getElementById('aprs_radius').value) || 0,
+aprs_beacon: document.getElementById('aprs_beacon').checked,
+aprs_symbol: document.getElementById('aprs_symbol').value,
+aprs_comment: document.getElementById('aprs_comment').value,
+aprs_alert: normalizeAprsAlertInput(document.getElementById('aprs_alert').value),
+aprs_alert_enabled: document.getElementById('aprs_alert_enabled').checked,
+enable_led_alert: document.getElementById('enable_led_alert').checked,
+led_alert_duration_ms: (() => {
+const raw = parseInt(document.getElementById('led_alert_duration_ms').value, 10);
+if (!Number.isFinite(raw)) return 5000;
+return Math.min(60000, Math.max(100, raw));
+})(),
+led_alert_blink_ms: (() => {
+const raw = parseInt(document.getElementById('led_alert_blink_ms').value, 10);
+if (!Number.isFinite(raw)) return 500;
+return Math.min(5000, Math.max(50, raw));
+})(),
+aprs_alert_min_sec: (() => {
+const raw = parseInt(document.getElementById('aprs_alert_min_sec').value, 10);
+if (!Number.isFinite(raw)) return 300;
+return Math.min(86400, Math.max(0, raw));
+})(),
+aprs_alert_screen_sec: (() => {
+const raw = parseInt(document.getElementById('aprs_alert_screen_sec').value, 10);
+if (!Number.isFinite(raw)) return 5;
+return Math.min(60, Math.max(1, raw));
+})(),
+aprs_alert_nearby_enabled: document.getElementById('aprs_alert_nearby_enabled').checked,
+aprs_alert_wx_enabled: document.getElementById('aprs_alert_wx_enabled').checked,
+weather_alert_storm_enabled: document.getElementById('weather_alert_storm_enabled').checked,
+weather_alert_wind_enabled: document.getElementById('weather_alert_wind_enabled').checked,
+weather_alert_wind_threshold_ms: (() => {
+const raw = parseFloat(document.getElementById('weather_alert_wind_threshold_ms').value);
+if (!Number.isFinite(raw)) return 12.0;
+return Math.min(60.0, Math.max(1.0, raw));
+})(),
+aprs_alert_distance_km: (() => {
+const raw = parseFloat(document.getElementById('aprs_alert_distance_km').value);
+if (!Number.isFinite(raw)) return 1.0;
+return Math.min(500, Math.max(0.1, raw));
+})(),
+aprs_interval_min: (() => {
+const raw = parseInt(document.getElementById('aprs_interval_min').value, 10);
+if (!Number.isFinite(raw)) return 29;
+return Math.min(180, Math.max(1, raw));
+})(),
+screen_order: readScreenOrderFromUI()
+};
+};
+const resetTftRotation = () => {
+if (!confirm('Tem certeza de que deseja restaurar a rotação do TFT para o padrão (1)?')) {
+return;
+}
+fetch('/api/reset_tft_rotation', {
+method: 'POST',
+headers: {'Content-Type': 'application/json'}
+})
+.then(r => r.json())
+.then(data => {
+if (data && data.action === "restart") {
+alert("Rotação do TFT restaurada para o padrão. O dispositivo será reiniciado.");
+} else {
+alert("Rotação do TFT restaurada para o padrão.");
+}
+loadConfig();
+})
+.catch(() => alert("Falha ao restaurar a rotação do TFT"));
+};
+const resetTouchCalibration = () => {
+if (!confirm('Tem certeza de que deseja restaurar a calibração do touch para o padrão?')) {
+return;
+}
+fetch('/api/reset_touch', {
+method: 'POST',
+headers: {'Content-Type': 'application/json'}
+})
+.then(r => r.json())
+.then(() => {
+alert("Calibração do touch restaurada para os valores padrão!");
+loadConfig();
+})
+.catch(() => alert("Falha ao restaurar a calibração do touch"));
+};
+const saveConfig = (overridePayload) => {
+setOpenWebRxBaseFromInput();
+const payload = overridePayload || collectConfigPayload();
+fetch('/api/save', {
+method: 'POST',
+headers: {'Content-Type': 'application/json'},
+body: JSON.stringify(payload)
+})
+.then(r => r.json())
+.then(data => {
+if (data && data.action === "restart") {
+alert("Configuração salva. O dispositivo será reiniciado e tentará conectar ao WiFi.");
+} else {
+alert("Configuração salva!");
+}
+})
+.catch(() => alert("Falha ao salvar a configuração"));
+};
+document.getElementById('config-form').addEventListener('submit', function(e) {
+e.preventDefault();
+saveConfig();
+});
+const backlightInput = document.getElementById('tft_backlight');
+if (backlightInput) {
+backlightInput.addEventListener('input', function(e) {
+document.getElementById('tft_backlight_value').textContent = e.target.value;
+});
+}
+const nightDimmingInput = document.getElementById('tft_night_dimming');
+if (nightDimmingInput) {
+nightDimmingInput.addEventListener('input', function(e) {
+document.getElementById('tft_night_dimming_value').textContent = e.target.value;
+});
+}
+const openWebRxInput = document.getElementById('openwebrx_url');
+if (openWebRxInput) {
+openWebRxInput.addEventListener('input', setOpenWebRxBaseFromInput);
+openWebRxInput.addEventListener('change', setOpenWebRxBaseFromInput);
+}
+const aprsAlertInput = document.getElementById('aprs_alert');
+if (aprsAlertInput) {
+aprsAlertInput.addEventListener('change', function(e) {
+e.target.value = normalizeAprsAlertInput(e.target.value);
+});
+}
+const settingsFileInput = document.getElementById('settings_file_input');
+if (settingsFileInput) {
+settingsFileInput.addEventListener('change', function(e) {
+const file = e.target.files && e.target.files[0] ? e.target.files[0] : null;
+importSettingsFromFile(file);
+});
+}
+loadConfig();
+loadUart2Status();
+loadSpots();
+setInterval(loadSpots, 2000);
+loadAPRS();
+setInterval(loadAPRS, 2000);
+loadPropagation();
+setInterval(loadPropagation, 60000);
+loadPOTA();
+setInterval(loadPOTA, 60000);
+loadHamalert();
+setInterval(loadHamalert, 60000);
+setInterval(loadUart2Status, 2000);
+loadBridgeBtStatus();
+setInterval(loadBridgeBtStatus, 3000);
+['cont_af','cont_an','cont_as','cont_eu','cont_na','cont_sa','cont_oc'].forEach(id => {
+const el = document.getElementById(id);
+if (el) {
+el.addEventListener('change', function() {
+readContinentFilters();
+updateTable();
+});
+}
+});
+readContinentFilters();
+let bridgeBtLastStatus = null;
+const bridgeBtDraftPasswords = {};
+function isBridgeModuleSelected() {
+const select = document.getElementById('connectedModule');
+return !!(select && String(select.value) === 'esp32_bridge');
+}
+function refreshBridgeBtSectionVisibility() {
+const section = document.getElementById('bridge-btspp-section');
+if (!section) return;
+const visible = isBridgeModuleSelected();
+section.style.display = visible ? '' : 'none';
+if (visible) {
+loadBridgeBtStatus();
+}
+}
+function buildBridgeDeviceRow(device) {
+const safeName = (device && device.name) ? String(device.name) : 'BT_DEVICE';
+const safeAddr = (device && device.addr) ? String(device.addr) : '';
+const safeAddrRaw = (device && device.addr_raw) ? String(device.addr_raw) : safeAddr;
+const cacheKey = String(safeAddrRaw || safeAddr || '').toUpperCase();
+const row = document.createElement('div');
+row.style.display = 'grid';
+row.style.gridTemplateColumns = 'minmax(140px,1fr) minmax(120px,1fr) minmax(140px,1fr) auto';
+row.style.gap = '8px';
+row.style.alignItems = 'center';
+row.style.padding = '8px';
+row.style.border = '1px solid #444';
+row.style.borderRadius = '6px';
+row.style.background = '#1b1b1b';
+const nameCell = document.createElement('div');
+nameCell.textContent = safeName;
+nameCell.style.color = '#e6e6e6';
+const addrCell = document.createElement('div');
+addrCell.textContent = safeAddr || '-';
+addrCell.style.color = '#9fd3ff';
+addrCell.style.fontFamily = 'monospace';
+addrCell.style.fontSize = '12px';
+const passInput = document.createElement('input');
+passInput.type = 'text';
+passInput.placeholder = 'Senha/PIN (opcional)';
+passInput.maxLength = 16;
+passInput.style.minWidth = '120px';
+if (cacheKey && typeof bridgeBtDraftPasswords[cacheKey] === 'string') {
+passInput.value = bridgeBtDraftPasswords[cacheKey];
+}
+passInput.addEventListener('input', () => {
+if (!cacheKey) return;
+bridgeBtDraftPasswords[cacheKey] = String(passInput.value || '');
+});
+const pairBtn = document.createElement('button');
+pairBtn.type = 'button';
+pairBtn.className = 'save-btn';
+pairBtn.textContent = 'PAIR';
+pairBtn.style.width = 'auto';
+pairBtn.style.padding = '8px 12px';
+pairBtn.addEventListener('click', () => {
+if (cacheKey) {
+bridgeBtDraftPasswords[cacheKey] = String(passInput.value || '');
+}
+triggerBridgePair(safeName, safeAddrRaw, passInput.value || '');
+});
+row.appendChild(nameCell);
+row.appendChild(addrCell);
+row.appendChild(passInput);
+row.appendChild(pairBtn);
+return row;
+}
+function renderBridgeBtStatus(data) {
+bridgeBtLastStatus = data || {};
+const statusEl = document.getElementById('bridge-bt-status');
+const listEl = document.getElementById('bridge-bt-list');
+const pairedEl = document.getElementById('bridge-bt-paired');
+if (!statusEl || !listEl || !pairedEl) return;
+const enabled = !!bridgeBtLastStatus.enabled;
+const scanning = !!bridgeBtLastStatus.scan_in_progress;
+const disc = bridgeBtLastStatus.disc_status ? String(bridgeBtLastStatus.disc_status) : '-';
+const ack = bridgeBtLastStatus.last_ack ? String(bridgeBtLastStatus.last_ack) : '-';
+const err = bridgeBtLastStatus.last_error ? String(bridgeBtLastStatus.last_error) : '';
+const pairPending = !!bridgeBtLastStatus.pair_pending;
+const pairResult = bridgeBtLastStatus.pair_result ? String(bridgeBtLastStatus.pair_result) : 'none';
+statusEl.textContent =
+`Status: ${enabled ? 'ativo' : 'inativo'} | busca: ${scanning ? 'em andamento' : 'parada'} | ACK: ${ack} | DISC: ${disc}` +
+(err ? ` | ERR: ${err}` : '') +
+(pairPending ? ' | PAREAMENTO: em andamento' : '') +
+(pairResult === 'ok' ? ' | PAREAMENTO: OK' : (pairResult === 'err' ? ' | PAREAMENTO: ERRO' : ''));
+listEl.innerHTML = '';
+const devices = Array.isArray(bridgeBtLastStatus.devices) ? bridgeBtLastStatus.devices : [];
+if (devices.length === 0) {
+const empty = document.createElement('div');
+empty.textContent = scanning ? 'Buscando dispositivos BTSPP...' : 'Nenhum dispositivo BTSPP encontrado.';
+empty.style.color = '#b0b0b0';
+empty.style.fontSize = '12px';
+listEl.appendChild(empty);
+} else {
+devices.forEach((dev) => {
+listEl.appendChild(buildBridgeDeviceRow(dev));
+});
+}
+const pairedName = bridgeBtLastStatus.paired_name ? String(bridgeBtLastStatus.paired_name) : '';
+const pairedAddr = bridgeBtLastStatus.paired_addr ? String(bridgeBtLastStatus.paired_addr) : '';
+if (pairedAddr) {
+pairedEl.textContent = `Dispositivo BTSPP pareado: ${pairedName || 'BT_DEVICE'} (${pairedAddr})`;
+} else {
+pairedEl.textContent = 'Dispositivo BTSPP pareado: nenhum';
+}
+}
+function loadBridgeBtStatus() {
+if (!isBridgeModuleSelected()) return;
+fetch('/api/bridge_bt_status')
+.then((r) => r.json())
+.then((data) => renderBridgeBtStatus(data || {}))
+.catch(() => renderBridgeBtStatus({ enabled: true, devices: [], last_error: 'api_error' }));
+}
+function triggerBridgeBtScan() {
+if (!isBridgeModuleSelected()) {
+alert('Selecione primeiro o módulo ESP32-BRIDGE.');
+return;
+}
+fetch('/api/bridge_bt_scan', { method: 'POST' })
+.then((r) => r.json().catch(() => ({})))
+.then(() => loadBridgeBtStatus())
+.catch(() => alert('Falha ao iniciar a busca BTSPP.'));
+}
+function triggerBridgePair(name, address, password) {
+if (!isBridgeModuleSelected()) {
+alert('Selecione primeiro o módulo ESP32-BRIDGE.');
+return;
+}
+const payload = {
+name: String(name || ''),
+address: String(address || ''),
+password: String(password || '')
+};
+const cacheKey = String(payload.address || '').toUpperCase();
+if (cacheKey) {
+bridgeBtDraftPasswords[cacheKey] = payload.password;
+}
+fetch('/api/bridge_bt_pair', {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify(payload)
+})
+.then(async (r) => {
+const data = await r.json().catch(() => ({}));
+if (!r.ok || data.status === 'error') {
+throw new Error(data.message || 'pair_error');
+}
+if (cacheKey) {
+bridgeBtDraftPasswords[cacheKey] = '';
+}
+loadBridgeBtStatus();
+})
+.catch((err) => {
+alert(`Falha no pareamento: ${err && err.message ? err.message : 'pair_error'}`);
+});
+}
+function ensureModulesTabEN() {
+if (document.getElementById('modules-page') || document.getElementById('connectedModule')) {
+return;
+}
+const allTabButtons = Array.from(document.querySelectorAll('.nav .nav-btn'));
+const settingsButton = allTabButtons.find((el) => {
+const txt = (el.textContent || '').toLowerCase();
+return txt.includes('settings') || txt.includes('ustawienia');
+});
+const instructionsButton = allTabButtons.find((el) => {
+const txt = (el.textContent || '').toLowerCase();
+return txt.includes('manual') || txt.includes('instructions');
+});
+const settingsPanel = document.getElementById('config-page');
+const instructionsPanel = document.getElementById('manual-page');
+if (!settingsButton || !instructionsButton || !settingsPanel) {
+return;
+}
+const modulesButton = settingsButton.cloneNode(false);
+modulesButton.textContent = 'Modules';
+modulesButton.id = 'modules-page-button';
+modulesButton.setAttribute('onclick', "showPage('modules')");
+modulesButton.onclick = function() {
+if (typeof showPage === 'function') {
+showPage('modules');
+}
+};
+instructionsButton.parentNode.insertBefore(modulesButton, instructionsButton);
+const modulesPanel = settingsPanel.cloneNode(false);
+modulesPanel.id = 'modules-page';
+modulesPanel.classList.remove('active');
+modulesPanel.innerHTML = '' +
+'<div class="config-form">' +
+'  <h2 style="color: #e0e0e0; margin-bottom: 20px; text-align: center;">Módulos</h2>' +
+'  <div id="modules-uart-host"></div>' +
+'  <div class="config-section">' +
+'    <h3>Módulo conectado</h3>' +
+'    <div class="form-group">' +
+'      <label for="connectedModule">Módulo conectado:</label>' +
+'      <select id="connectedModule">' +
+'        <option value="none">Nenhum</option>' +
+'        <option value="gps">GPS</option>' +
+'        <option value="aprs_tnc">APRS TNC2 (RX Only)</option>' +
+'        <option value="aprs_tnc_kiss">APRS_TNC-KISS</option>' +
+'        <option value="esp32_bridge">ESP32-BRIDGE</option>' +
+'      </select>' +
+'    </div>' +
+'  </div>' +
+'  <div id="bridge-btspp-section" class="config-section" style="display:none;">' +
+'    <h3>ESP32-BRIDGE-Bluetooth SPP</h3>' +
+'    <div class="form-group" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">' +
+'      <button type="button" class="save-btn" id="bridgeBtScanBtn" style="padding:8px 14px; width:auto;">Buscar BTSPP</button>' +
+'      <span id="bridge-bt-status" style="color:#b0b0b0; font-size:12px;">Status: aguardando...</span>' +
+'    </div>' +
+'    <div id="bridge-bt-list" style="display:flex; flex-direction:column; gap:8px; margin-top:8px;"></div>' +
+'    <div id="bridge-bt-paired" style="margin-top:10px; color:#e0e0e0; font-size:13px;"></div>' +
+'  </div>' +
+'  <button type="button" class="save-btn" onclick="saveConfig()">💾 Salvar configurações dos módulos</button>' +
+'</div>';
+if (instructionsPanel && instructionsPanel.parentNode) {
+instructionsPanel.parentNode.insertBefore(modulesPanel, instructionsPanel);
+} else if (settingsPanel.parentNode) {
+settingsPanel.parentNode.appendChild(modulesPanel);
+}
+const uartSection = document.getElementById('uart-settings-section');
+const uartHost = document.getElementById('modules-uart-host');
+if (uartSection && uartHost && uartSection.parentNode !== uartHost) {
+uartHost.appendChild(uartSection);
+}
+const moduleSelect = document.getElementById('connectedModule');
+if (moduleSelect && !moduleSelect.dataset.bridgeHooked) {
+moduleSelect.addEventListener('change', () => {
+refreshBridgeBtSectionVisibility();
+});
+moduleSelect.dataset.bridgeHooked = '1';
+}
+const scanBtn = document.getElementById('bridgeBtScanBtn');
+if (scanBtn && !scanBtn.dataset.bridgeHooked) {
+scanBtn.addEventListener('click', triggerBridgeBtScan);
+scanBtn.dataset.bridgeHooked = '1';
+}
+}
+function updateModulesInfoEN(config) {
+ensureModulesTabEN();
+const select = document.getElementById('connectedModule');
+if (!select) {
+return;
+}
+let moduleCodeRaw = (config && config.uart2_connected_module) ? String(config.uart2_connected_module).toLowerCase() : 'none';
+if (moduleCodeRaw === 'none' && config && config.uart2_mode) {
+const mode = String(config.uart2_mode).toLowerCase();
+if (mode === 'gps') moduleCodeRaw = 'gps';
+else if (mode === 'bt') moduleCodeRaw = 'aprs_tnc';
+}
+const map = {
+'brak': 'none',
+'none': 'none',
+'off': 'none',
+'gps': 'gps',
+'aprs tnc': 'aprs_tnc',
+'aprs tnc2 (rx only)': 'aprs_tnc',
+'aprs_tnc': 'aprs_tnc',
+'aprs tnc kiss': 'aprs_tnc_kiss',
+'aprs-tnc-kiss': 'aprs_tnc_kiss',
+'aprs_tnc-kiss': 'aprs_tnc_kiss',
+'aprs_tnc_kiss': 'aprs_tnc_kiss',
+'kiss': 'aprs_tnc_kiss',
+'tnc': 'aprs_tnc',
+'esp32-bridge': 'esp32_bridge',
+'esp32_bridge': 'esp32_bridge',
+'bridge': 'esp32_bridge'
+};
+const moduleCode = map[moduleCodeRaw] || 'none';
+select.value = moduleCode;
+refreshBridgeBtSectionVisibility();
+}
+document.addEventListener('DOMContentLoaded', ensureModulesTabEN);
+</script>
+<div class="app-footer">
+Software projetado e desenvolvido por Konrad Wiśniewski SP3KON (com a ajuda de IA).<br>
+Versão atual do software: ESP32-HAM-CLOCK v1.3.0 (05.07.2026).<br>
+Dúvidas: sp3kon@gmail.com
+</div>
+<div class="links-bottom-bar">
+<button class="links-bottom-btn" onclick="showPage('links')">&#128279; Links</button>
+</div>
+</body>
+</html>
